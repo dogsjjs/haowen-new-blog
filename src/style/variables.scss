@@ -1,0 +1,143 @@
+// e:/full/path/to/your/project/src/style/variables.scss
+
+// ==========================================================================
+// SCSS Variables - Raw Values
+// These are the source values for your design system.
+// ==========================================================================
+
+// Light Theme Base Colors
+$light-app-bg: linear-gradient(to bottom right, #e0eafc, #cfdef3); // Lighter, softer gradient
+$light-text-color: #2c3e50;         // Primary text color
+$light-text-muted-color: #5a6a7a;   // Secondary/muted text
+$light-primary-color: #3498db;      // Accent color for links, buttons
+$light-card-bg: #ffffff;            // Background for cards, content blocks
+$light-border-color: #dce4f0;       // General border color
+
+// Dark Theme Base Colors
+$dark-app-bg: linear-gradient(to bottom right, #232a34, #1a2028); // Darker, subtle gradient
+$dark-text-color: #e1e8f0;          // Primary text color in dark mode
+$dark-text-muted-color: #a0aec0;    // Secondary/muted text in dark mode
+$dark-primary-color: #5dade2;       // Accent color for dark mode
+$dark-card-bg: #2d3748;             // Background for cards in dark mode
+$dark-border-color: #4a5568;        // General border color in dark mode
+
+// Acrylic Style Values
+// Light Theme
+$light-acrylic-bg: rgba(255, 255, 255, 0.55); // Slightly more opaque for better readability
+$light-acrylic-border: rgba(220, 228, 240, 0.4); // Softer border
+$light-acrylic-shadow: rgba(44, 62, 80, 0.12);  // Softer shadow
+// Dark Theme
+$dark-acrylic-bg: rgba(45, 55, 72, 0.65);   // Matches dark card bg with transparency
+$dark-acrylic-border: rgba(74, 85, 104, 0.35); // Softer border for dark
+$dark-acrylic-shadow: rgba(0, 0, 0, 0.25);     // Subtle shadow for dark
+
+// Backdrop Filter Values (can be shared or theme-specific)
+$acrylic-blur-strong: 12px;        // For prominent acrylic elements like headers
+$acrylic-saturate-strong: 180%;
+$acrylic-blur-soft: 8px;           // For less prominent acrylic or subtle effects
+$acrylic-saturate-soft: 160%;
+
+// Layout Dimensions
+$header-height: 64px;
+$footer-height: 50px;
+$content-padding: 24px;            // Default padding for main content areas
+$container-max-width: 1140px;      // Max width for centered content (e.g., blog posts)
+
+// Typography
+$font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"; // System font stack
+$font-family-serif: Georgia, 'Times New Roman', Times, serif; // For blog article text
+$font-family-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; // For code blocks
+$font-size-base: 16px;             // Default font size (1rem)
+$line-height-base: 1.65;           // Base line height for readability
+
+// Transitions
+$transition-duration-fast: 0.15s;
+$transition-duration-normal: 0.3s;
+$transition-timing-function: ease-in-out;
+
+// Borders & Shadows
+$border-radius-base: 6px;          // Standard border radius
+$border-radius-large: 12px;        // Larger border radius for cards etc.
+$box-shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); // Softer, more modern shadow
+
+// ==========================================================================
+// CSS Custom Properties Output
+// These are generated from the SCSS variables above and used by components.
+// ==========================================================================
+:root {
+  // --- Base Values (shared across themes or used to define theme specifics) ---
+  // Layout
+  --header-height: #{$header-height};
+  --footer-height: #{$footer-height};
+  --content-padding: #{$content-padding};
+  --container-max-width: #{$container-max-width};
+
+  // Typography
+  --font-family-sans: #{$font-family-sans};
+  --font-family-serif: #{$font-family-serif};
+  --font-family-mono: #{$font-family-mono};
+  --font-size-base: #{$font-size-base};
+  --line-height-base: #{$line-height-base};
+
+  // Transitions
+  --transition-duration-fast: #{$transition-duration-fast};
+  --transition-duration-normal: #{$transition-duration-normal};
+  --transition-timing-function: #{$transition-timing-function};
+
+  // Borders & Shadows
+  --border-radius-base: #{$border-radius-base};
+  --border-radius-large: #{$border-radius-large};
+  --box-shadow-soft: #{$box-shadow-soft};
+
+  // Acrylic Filters
+  --acrylic-blur-strong: #{$acrylic-blur-strong};
+  --acrylic-saturate-strong: #{$acrylic-saturate-strong};
+  --acrylic-blur-soft: #{$acrylic-blur-soft};
+  --acrylic-saturate-soft: #{$acrylic-saturate-soft};
+
+  // --- Light Theme Specifics (used by html:not(.dark)) ---
+  --app-bg-light: #{$light-app-bg};
+  --text-color-light: #{$light-text-color};
+  --text-muted-color-light: #{$light-text-muted-color};
+  --primary-color-light: #{$light-primary-color};
+  --card-bg-light: #{$light-card-bg};
+  --border-color-light: #{$light-border-color};
+  --acrylic-bg-light: #{$light-acrylic-bg};
+  --acrylic-border-light: #{$light-acrylic-border};
+  --acrylic-shadow-light: #{$light-acrylic-shadow};
+
+  // --- Dark Theme Specifics (used by html.dark) ---
+  --app-bg-dark: #{$dark-app-bg};
+  --text-color-dark: #{$dark-text-color};
+  --text-muted-color-dark: #{$dark-text-muted-color};
+  --primary-color-dark: #{$dark-primary-color};
+  --card-bg-dark: #{$dark-card-bg};
+  --border-color-dark: #{$dark-border-color};
+  --acrylic-bg-dark: #{$dark-acrylic-bg};
+  --acrylic-border-dark: #{$dark-acrylic-border};
+  --acrylic-shadow-dark: #{$dark-acrylic-shadow};
+
+  // --- Current Theme Variables (default to light mode values) ---
+  --app-bg-current: var(--app-bg-light);
+  --text-color-current: var(--text-color-light);
+  --text-muted-color-current: var(--text-muted-color-light);
+  --primary-color-current: var(--primary-color-light);
+  --card-bg-current: var(--card-bg-light);
+  --border-color-current: var(--border-color-light);
+  --acrylic-bg-current: var(--acrylic-bg-light);
+  --acrylic-border-current: var(--acrylic-border-light);
+  --acrylic-shadow-current: var(--acrylic-shadow-light);
+}
+
+html.dark {
+  // --- Override Current Theme Variables for Dark Mode ---
+  --app-bg-current: var(--app-bg-dark);
+  --text-color-current: var(--text-color-dark);
+  --text-muted-color-current: var(--text-muted-color-dark);
+  --primary-color-current: var(--primary-color-dark);
+  --card-bg-current: var(--card-bg-dark);
+  --border-color-current: var(--border-color-dark);
+  --acrylic-bg-current: var(--acrylic-bg-dark);
+  --acrylic-border-current: var(--acrylic-border-dark);
+  --acrylic-shadow-current: var(--acrylic-shadow-dark);
+}
