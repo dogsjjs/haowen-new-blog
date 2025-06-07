@@ -23,7 +23,6 @@ import LayoutFooter from '@/components/layout/Footer.vue'
 
 .layout-main-content {
   flex-grow: 1; /* 让主内容区域占据剩余空间 */
-  padding: 20px;
   /* 
     为了让亚克力效果在 Header/Footer 下方的内容上可见，
     内容区域本身不应有不透明背景，或者其背景应在亚克力元素之下。

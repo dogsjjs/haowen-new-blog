@@ -1,6 +1,6 @@
 <template>
   <el-header class="layout-header acrylic-style">
-    <div class="logo">
+    <div class="logo" @click="goToHome">
       Blog
     </div>
     <div class="header-content">
@@ -14,16 +14,22 @@
   </el-header>
 </template>
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Sunny as SunnyIcon, Moon as MoonIcon } from '@element-plus/icons-vue'
-import { useThemeStore } from '@/stores/theme' // 导入 theme store
-import AppMenu from '@/components/layout/Menu.vue' // 导入新的菜单组件
-import router, { generateMenuItems } from '@/router' // 导入路由实例和生成函数
+import { computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { Sunny as SunnyIcon, Moon as MoonIcon } from '@element-plus/icons-vue';
+import { useThemeStore } from '@/stores/theme'; // 导入 theme store
+import AppMenu from '@/components/layout/Menu.vue'; // 导入新的菜单组件
+import appRouter, { generateMenuItems } from '@/router'; // 导入路由实例和生成函数
 import type { MenuItem } from '@/types/menu';
 
-const themeStore = useThemeStore() // 使用 store
+const themeStore = useThemeStore(); // 使用 store
+const router = useRouter();
 
-const appMenuItems = computed<MenuItem[]>(() => generateMenuItems(router.options.routes))
+const appMenuItems = computed<MenuItem[]>(() => generateMenuItems(appRouter.options.routes));
+
+const goToHome = () => {
+  router.push('/');
+};
 
 </script>
 <style lang="scss" scoped>
@@ -55,6 +61,7 @@ const appMenuItems = computed<MenuItem[]>(() => generateMenuItems(router.options
   font-size: 1.5rem;
   font-weight: bold;
   color: var(--text-color-current);
+  cursor: pointer; /* 添加手型光标，提示用户可以点击 */
   margin-right: 20px; /* 给 logo 和菜单之间一些间距 */
 }
 .toolbar {
