@@ -77,7 +77,34 @@ const routes: Array<RouteRecordRaw> = [
         path: '', // 默认子路由，例如 /admin
         name: 'admin-dashboard',
         component: AdminDashboardView,
-        // meta: { requiresAuth: true } // 也可以在子路由单独设置，但父路由设置更方便
+        meta: {
+          layout: AdminLayout, // 由 App.vue 使用
+          showInSidebar: true, // 在侧边栏显示
+          title: '仪表盘',     // 菜单标题
+          icon: 'mdi:view-dashboard-outline' // Iconify 图标名称
+        }
+      },
+      {
+        path: 'categories',
+        name: 'admin-categories',
+        component: () => import('@/views/admin/CategoriesManagementView.vue'),
+        meta: {
+          layout: AdminLayout,
+          showInSidebar: true,
+          title: '博客类型管理',
+          icon: 'mdi:account-group-outline'
+        }
+      },
+      {
+        path: 'settings',
+        name: 'admin-settings',
+        component: () => import('@/views/admin/SettingsView.vue'),
+        meta: {
+          layout: AdminLayout,
+          showInSidebar: true,
+          title: '系统设置',
+          icon: 'mdi:cog-outline'
+        }
       },
       // 在这里添加更多的后台管理子路由
       // {

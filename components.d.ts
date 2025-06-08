@@ -8,6 +8,8 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AdminHeader: typeof import('./src/components/layout/admin/AdminHeader.vue')['default']
+    AdminSidebar: typeof import('./src/components/layout/admin/AdminSidebar.vue')['default']
     BlogPostCard: typeof import('./src/components/BlogPostCard/index.vue')['default']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElCard: typeof import('element-plus/es')['ElCard']
