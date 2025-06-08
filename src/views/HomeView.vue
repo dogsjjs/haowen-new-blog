@@ -1,5 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { Icon } from '@iconify/vue'
+
+// 定义接口以增强类型安全
+interface Category {
+  id: string;
+  name: string;
+  icon?: string; // Iconify icon name (e.g., 'mdi:apps')
+  count?: number; // 可选的文章数量
+}
 
 interface Post {
   id: number;
@@ -8,9 +17,32 @@ interface Post {
   imageUrl: string;
   imageHeight: number; // 用于瀑布流中不同的图片高度
   publishDate: string;
-  category: string;
+  category: Category; // 分类名称或对象
   tags: string[];
 }
+
+
+
+// 模拟分类数据
+const categories = ref<Category[]>([
+  { id: 'tech', name: '技术', icon: 'mdi:code-braces', count: 3 },
+  { id: 'life', name: '生活', icon: 'mdi:heart-outline', count: 3 },
+  { id: 'travel', name: '旅行', icon: 'mdi:airplane-takeoff', count: 3 },
+  { id: 'food', name: '美食', icon: 'mdi:silverware-fork-knife', count: 3 },
+]);
+
+const tags = ref([
+  { id: 1, name: 'Vue', count: 10 },
+  { id: 2, name: 'JavaScript', count: 15 },
+  { id: 3, name: '后端开发', count: 7 },
+  { id: 4, name: '数据库', count: 6 },
+  { id: 5, name: 'UI/UX设计', count: 4 },
+  { id: 6, name: 'ElementPlus', count: 9 },
+  { id: 7, name: 'Node.js', count: 5 },
+  { id: 8, name: 'Python', count: 3 },
+  { id: 9, name: '数据结构与算法', count: 7 },
+  { id: 10, name: '项目实战', count: 11 },
+]);
 
 // 生成模拟博客文章数据
 const generateMockPosts = (count: number): Post[] => {
@@ -45,7 +77,7 @@ const generateMockPosts = (count: number): Post[] => {
       imageUrl: `https://picsum.photos/seed/${i + 100}/400/${imageHeight}`, // 使用 picsum.photos 获取随机图片
       imageHeight: imageHeight,
       publishDate: getRandomDate(),
-      category: mockCategories[i % mockCategories.length],
+      category: categories.value[i % categories.value.length], // 随机分类
       tags: getRandomTags(Math.floor(Math.random() * 3) + 2), // 每篇文章2-4个标签
     });
   }
@@ -62,25 +94,7 @@ const personalInfo = ref({
   bio: '热爱分享技术、生活点滴与奇思妙想。欢迎来到我的小站！',
 });
 
-const categories = ref([
-  { id: 1, name: '技术栈', count: 5 },
-  { id: 2, name: '生活感悟', count: 8 },
-  { id: 3, name: '学习笔记', count: 12 },
-  { id: 4, name: '资源分享', count: 3 },
-]);
 
-const tags = ref([
-  { id: 1, name: 'Vue', count: 10 },
-  { id: 2, name: 'JavaScript', count: 15 },
-  { id: 3, name: '后端开发', count: 7 },
-  { id: 4, name: '数据库', count: 6 },
-  { id: 5, name: 'UI/UX设计', count: 4 },
-  { id: 6, name: 'ElementPlus', count: 9 },
-  { id: 7, name: 'Node.js', count: 5 },
-  { id: 8, name: 'Python', count: 3 },
-  { id: 9, name: '数据结构与算法', count: 7 },
-  { id: 10, name: '项目实战', count: 11 },
-]);
 
 // 站点统计数据
 import { computed } from 'vue';
@@ -99,7 +113,7 @@ const navigateToPost = (postId: number) => {
 
 const navigateToCategoryPage = (categoryName: string) => {
   console.log(`Navigating to category page: ${categoryName}`);
-  router.push(`/category/${encodeURIComponent(categoryName)}`);
+  router.push(`/categories/${encodeURIComponent(categoryName)}`);
 };
 
 const navigateToTagPage = (tagName: string) => {
@@ -132,18 +146,21 @@ const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
       <main class="blog-posts-container">
         <div class="posts-grid">
           <article v-for="post in posts" :key="post.id" class="post-item" @click="navigateToPost(post.id)">
-            <img :src="post.imageUrl" :alt="post.title" class="post-image" :style="{ height: `${post.imageHeight}px` }" />
+            <img :src="post.imageUrl" :alt="post.title" class="post-image"
+              :style="{ height: `${post.imageHeight}px` }" />
             <div class="post-content">
               <div class="post-meta">
                 <span class="post-date">{{ post.publishDate }}</span>
-                <span class="post-category" @click.stop="navigateToCategoryPage(post.category)" title="查看该分类下的文章">
-                  <el-icon><FolderOpened /></el-icon> {{ post.category }}
+                <span class="post-category" @click.stop="navigateToCategoryPage(post.category.id)" title="查看该分类下的文章">
+                  <Icon :icon="post.category.icon" v-if="post.category.icon" class="tag-icon-svg" /> {{
+                    post.category.name }}
                 </span>
               </div>
               <h3 class="post-title">{{ post.title }}</h3>
               <p class="post-excerpt">{{ post.excerpt }}</p>
               <div class="post-tags">
-                <el-tag v-for="tag in post.tags" :key="tag" type="info" size="small" effect="plain" class="post-tag-item" @click.stop="navigateToTagPage(tag)" title="查看该标签下的文章">
+                <el-tag v-for="tag in post.tags" :key="tag" type="info" size="small" effect="plain"
+                  class="post-tag-item" @click.stop="navigateToTagPage(tag)" title="查看该标签下的文章">
                   {{ tag }}
                 </el-tag>
               </div>
@@ -178,6 +195,7 @@ const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
           <h3 class="info-card-title">文章分类</h3>
           <ul class="category-list">
             <li v-for="category in categories" :key="category.id">
+              <Icon :icon="category.icon" v-if="category.icon" class="tag-icon-svg" />
               <a href="#">{{ category.name }} ({{ category.count }})</a>
             </li>
           </ul>
@@ -386,6 +404,7 @@ const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
     display: flex;
     align-items: center;
     cursor: pointer;
+
     .el-icon {
       margin-right: 4px;
     }
@@ -462,6 +481,14 @@ const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
   }
 }
 
+.tag-icon-svg {
+  margin-right: 8px;
+  font-size: 1.2em;
+  /* 调整 Iconify 图标大小 */
+  vertical-align: middle;
+  /* 确保图标与文字垂直对齐良好 */
+}
+
 .category-list,
 .tag-list {
   list-style: none;
@@ -530,6 +557,7 @@ const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
     list-style: none;
     padding: 0;
     margin: 0;
+
     li {
       display: flex;
       justify-content: space-between;
@@ -538,9 +566,11 @@ const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
       font-size: 0.9rem;
       color: var(--el-text-color-regular);
       border-bottom: 1px dashed var(--el-border-color-lighter);
+
       &:last-child {
         border-bottom: none;
       }
+
       strong {
         color: var(--el-text-color-primary);
         font-weight: 600;
