@@ -1,7 +1,7 @@
 <template>
   <el-header class="layout-header acrylic-style">
     <div class="logo" @click="goToHome">
-      Blog
+      BBBlog
     </div>
     <div class="header-content">
       <AppMenu :menu-items="appMenuItems" />

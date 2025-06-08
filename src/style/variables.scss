@@ -95,6 +95,16 @@ $box-shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0
   --acrylic-blur-soft: #{$acrylic-blur-soft};
   --acrylic-saturate-soft: #{$acrylic-saturate-soft};
 
+  // Category Tag Button Variables - Light Mode
+  --category-tag-bg: #f4f4f5;
+  --category-tag-text-color: #606266;
+  --category-tag-border-color: #dcdfe6;
+  --category-tag-hover-bg: #e9e9eb;
+  --category-tag-hover-border-color: #c0c4cc;
+  --category-tag-active-bg: #409eff; // Example: Element Plus primary color
+  --category-tag-active-text-color: #ffffff;
+  --category-tag-active-border-color: #409eff;
+
   // --- Light Theme Specifics (used by html:not(.dark)) ---
   --app-bg-light: #{$light-app-bg};
   --text-color-light: #{$light-text-color};
@@ -140,4 +150,14 @@ html.dark {
   --acrylic-bg-current: var(--acrylic-bg-dark);
   --acrylic-border-current: var(--acrylic-border-dark);
   --acrylic-shadow-current: var(--acrylic-shadow-dark);
+
+  // Category Tag Button Variables - Dark Mode
+  --category-tag-bg: var(--el-fill-color-darker); // Using Element Plus variable as a base
+  --category-tag-text-color: var(--el-text-color-regular);
+  --category-tag-border-color: var(--el-border-color-darker);
+  --category-tag-hover-bg: var(--el-fill-color-dark);
+  --category-tag-hover-border-color: var(--el-border-color-dark);
+  --category-tag-active-bg: var(--el-color-primary); // Element Plus primary color (adapts)
+  --category-tag-active-text-color: #ffffff; // Or var(--el-color-white)
+  --category-tag-active-border-color: var(--el-color-primary);
 }

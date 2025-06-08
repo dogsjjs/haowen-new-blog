@@ -1,0 +1,37 @@
+// src/assets/styles/global.scss
+
+// Base theme (light mode) variables for background pattern
+:root {
+  --pattern-bg-color: #f4f4f5; // Light mode background
+  --pattern-line-color: rgba(0, 0, 0, 0.02); // Light mode pattern line
+}
+
+// Dark mode variables for background pattern
+// Assuming Element Plus adds 'dark' class to <html> tag for dark mode
+html.dark {
+  --pattern-bg-color: #282d36; // Dark mode background - adjust to your dark theme's base
+  --pattern-line-color: rgba(255, 255, 255, 0.03); // Dark mode pattern line - light lines on dark bg
+}
+
+body {
+  /* Set a base background color, in case the pattern fails or is not visible */
+  background-color: var(--pattern-bg-color); /* Use CSS variable */
+
+  /* Diagonal line pattern */
+  background-image: repeating-linear-gradient(
+    145deg,                          /* Line angle */
+    transparent,                    /* Transparent part */
+    transparent 15px,               /* Width of the transparent part */
+    var(--pattern-line-color) 15px, /* Use CSS variable for line color */
+    var(--pattern-line-color) 17px  /* Use CSS variable for line color (17px - 15px = 2px line thickness) */
+  );
+
+  /* Other properties to optimize the background, for example: */
+  /* background-attachment: fixed; */ /* If you want the pattern to not move on scroll */
+  /* background-size: cover; */     /* If using a single large image as a pattern */
+  color: var(--el-text-color-primary); // Ensure body text color also adapts to theme
+  // Transition for background color can be smooth, but pattern might not transition smoothly
+  transition: background-color 0.3s ease;
+}
+
+// ... any other global styles ...

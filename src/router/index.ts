@@ -22,10 +22,16 @@ const routes: Array<RouteRecordRaw> = [
     meta: { title: "分类", showInMenu: true, menuIndex: "1" },
   },
   {
-    path: "/types",
-    name: "typeManagement",
-    component: () => import("@/views/TypeView.vue"),
-    meta: { title: "类型", showInMenu: true, menuIndex: "2" },
+    path: "/tags/:tagId",
+    name: "tagViews",
+    component: () => import("@/views/TagView.vue"),
+    meta: { title: "标签", showInMenu: false },
+  },
+  {
+    path: "/tags/all",
+    name: "allTag",
+    component: () => import("@/views/TagView.vue"),
+    meta: { title: "标签", showInMenu: true, menuIndex: "2" },
   },
   {
     path: "/archives",

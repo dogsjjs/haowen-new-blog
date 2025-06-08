@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import BlogPostCard from '@/components/BlogPostCard/index.vue'; // 导入新组件
 import { Icon } from '@iconify/vue'
+
+// 定义接口
+interface Tag {
+  id: string;
+  name: string;
+  icon?: string; // Iconify icon name
+  count?: number; // 可选的文章数量
+}
 
 // 定义接口以增强类型安全
 interface Category {
@@ -18,10 +27,20 @@ interface Post {
   imageHeight: number; // 用于瀑布流中不同的图片高度
   publishDate: string;
   category: Category; // 分类名称或对象
-  tags: string[];
+  tags: Tag[];
 }
 
-
+const allTags = ref<Tag[]>([
+  { id: 'vue', name: 'Vue.js', icon: 'logos:vue', count: 1 },
+  { id: 'react', name: 'React', icon: 'logos:react', count: 6 },
+  { id: 'typescript', name: 'TypeScript', icon: 'logos:typescript-icon', count: 6 },
+  { id: 'javascript', name: 'JavaScript', icon: 'logos:javascript', count: 4 },
+  { id: 'nodejs', name: 'Node.js', icon: 'logos:nodejs-icon', count: 6 },
+  { id: 'css', name: 'CSS', icon: 'logos:css-3', count: 8 },
+  { id: 'html', name: 'HTML', icon: 'logos:html-5', count: 16 },
+  { id: 'lifestyle', name: '生活方式', icon: 'mdi:heart-pulse', count: 8 },
+  { id: 'productivity', name: '生产力', icon: 'mdi:rocket-launch-outline', count: 9 },
+]);
 
 // 模拟分类数据
 const categories = ref<Category[]>([
@@ -30,20 +49,6 @@ const categories = ref<Category[]>([
   { id: 'travel', name: '旅行', icon: 'mdi:airplane-takeoff', count: 3 },
   { id: 'food', name: '美食', icon: 'mdi:silverware-fork-knife', count: 3 },
 ]);
-
-const tags = ref([
-  { id: 1, name: 'Vue', count: 10 },
-  { id: 2, name: 'JavaScript', count: 15 },
-  { id: 3, name: '后端开发', count: 7 },
-  { id: 4, name: '数据库', count: 6 },
-  { id: 5, name: 'UI/UX设计', count: 4 },
-  { id: 6, name: 'ElementPlus', count: 9 },
-  { id: 7, name: 'Node.js', count: 5 },
-  { id: 8, name: 'Python', count: 3 },
-  { id: 9, name: '数据结构与算法', count: 7 },
-  { id: 10, name: '项目实战', count: 11 },
-]);
-
 // 生成模拟博客文章数据
 const generateMockPosts = (count: number): Post[] => {
   const mockPosts: Post[] = [];
@@ -53,9 +58,6 @@ const generateMockPosts = (count: number): Post[] => {
 
   const excerptsPool = [LOREM_IPSUM_SHORT, LOREM_IPSUM_MEDIUM, LOREM_IPSUM_LONG, LOREM_IPSUM_MEDIUM.substring(0, 100), LOREM_IPSUM_SHORT.substring(0, 30)];
 
-  const mockCategories = ['技术分享', '生活随笔', '教程指南', '项目展示', '思考感悟'];
-  const mockTags = ['Vue', 'JavaScript', '后端', '数据库', 'UI/UX', 'ElementPlus', 'Node.js', 'Python', '算法', '实战', '性能优化', '安全'];
-
   const getRandomDate = () => {
     const start = new Date(2022, 0, 1);
     const end = new Date();
@@ -64,7 +66,7 @@ const generateMockPosts = (count: number): Post[] => {
   };
 
   const getRandomTags = (count: number) => {
-    return [...mockTags].sort(() => 0.5 - Math.random()).slice(0, count);
+    return [...allTags.value].sort(() => 0.5 - Math.random()).slice(0, count);
   };
 
   for (let i = 1; i <= count; i++) {
@@ -118,11 +120,11 @@ const navigateToCategoryPage = (categoryName: string) => {
 
 const navigateToTagPage = (tagName: string) => {
   console.log(`Navigating to tag page: ${tagName}`);
-  router.push(`/tag/${encodeURIComponent(tagName)}`);
+  router.push(`/tags/${encodeURIComponent(tagName)}`);
 };
 
 const totalCategories = computed(() => categories.value.length);
-const totalTags = computed(() => tags.value.length);
+const totalTags = computed(() => allTags.value.length);
 const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
 
 </script>
@@ -145,27 +147,21 @@ const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
     <div class="main-content-area">
       <main class="blog-posts-container">
         <div class="posts-grid">
-          <article v-for="post in posts" :key="post.id" class="post-item" @click="navigateToPost(post.id)">
-            <img :src="post.imageUrl" :alt="post.title" class="post-image"
-              :style="{ height: `${post.imageHeight}px` }" />
-            <div class="post-content">
-              <div class="post-meta">
-                <span class="post-date">{{ post.publishDate }}</span>
-                <span class="post-category" @click.stop="navigateToCategoryPage(post.category.id)" title="查看该分类下的文章">
-                  <Icon :icon="post.category.icon" v-if="post.category.icon" class="tag-icon-svg" /> {{
-                    post.category.name }}
-                </span>
-              </div>
-              <h3 class="post-title">{{ post.title }}</h3>
-              <p class="post-excerpt">{{ post.excerpt }}</p>
-              <div class="post-tags">
-                <el-tag v-for="tag in post.tags" :key="tag" type="info" size="small" effect="plain"
-                  class="post-tag-item" @click.stop="navigateToTagPage(tag)" title="查看该标签下的文章">
-                  {{ tag }}
-                </el-tag>
-              </div>
-            </div>
-          </article>
+          <!-- 使用 BlogPostCard 组件 -->
+          <BlogPostCard v-for="post in posts" :key="post.id" :post="post" @click="navigateToPost(post.id)">
+            <template #category>
+              <span class="post-category" @click.stop="navigateToCategoryPage(post.category.id)" title="查看该分类下的文章">
+                <Icon :icon="post.category.icon" v-if="post.category.icon" class="tag-icon-svg" />
+                {{ post.category.name }}
+              </span>
+            </template>
+            <template #tags>
+              <el-tag v-for="tagInPost in post.tags" :key="tagInPost.id" type="info" size="small" effect="plain"
+                class="post-tag-item" @click.stop="navigateToTagPage(tagInPost.id)" title="查看该标签下的文章">
+                {{ tagInPost.name }}
+              </el-tag>
+            </template>
+          </BlogPostCard>
         </div>
       </main>
 
@@ -196,7 +192,8 @@ const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
           <ul class="category-list">
             <li v-for="category in categories" :key="category.id">
               <Icon :icon="category.icon" v-if="category.icon" class="tag-icon-svg" />
-              <a href="#">{{ category.name }} ({{ category.count }})</a>
+              <span @click.stop="navigateToCategoryPage(category.id)" class="category-item">{{ category.name }} ({{
+                category.count }})</span>
             </li>
           </ul>
         </div>
@@ -205,8 +202,10 @@ const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
         <div class="info-card">
           <h3 class="info-card-title">热门标签</h3>
           <ul class="tag-list">
-            <li v-for="tag in tags.slice(0, 7)" :key="tag.id"> <!-- 显示部分标签 -->
-              <a href="#" class="tag-item">{{ tag.name }}</a>
+            <li v-for="tag in allTags.slice(0, 7)" :key="tag.id"> <!-- 显示部分标签 -->
+              <span @click.stop="navigateToTagPage(tag.id)" class="tag-item">
+                <Icon :icon="tag.icon" v-if="tag.icon" class="tag-icon-svg" />{{ tag.name }}
+              </span>
             </li>
           </ul>
         </div>
@@ -216,10 +215,10 @@ const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
         <div class="info-card">
           <h3 class="info-card-title">标签云</h3>
           <div class="tag-cloud">
-            <a v-for="tag in tags" :key="tag.id" href="#" class="tag-cloud-item"
-              :style="{ fontSize: `${0.8 + tag.count * 0.05}rem` }">
-              {{ tag.name }}
-            </a>
+            <span v-for="tag in allTags" :key="tag.id" @click.stop="navigateToTagPage(tag.id)" class="tag-cloud-item"
+              :style="{ fontSize: `${0.8 + Number(tag.count) * 0.05}rem` }">{{ tag.name }}
+            </span>
+
           </div>
         </div>
       </aside>
@@ -228,15 +227,16 @@ const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
 </template>
 
 <style scoped lang="scss">
-.home-page {
-  // 页面根元素
-}
+// CSS variables like --acrylic-bg-color, --acrylic-border-color, 
+// --acrylic-sidebar-bg-color, --acrylic-sidebar-border-color, and --landing-overlay-bg
+// are now expected to be defined globally, e.g., in src/style/variables.scss
+// and handle their light/dark mode variations there.
 
 .landing-hero {
   height: 100vh; // 占满整个视口高度
   background-size: cover;
   background-position: center;
-  position: relative;
+  position: relative; // Keep for overlay positioning
   color: var(--el-color-white); // Use Element Plus variable for white
 }
 
@@ -246,7 +246,7 @@ const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6); // Slightly darker overlay for better contrast in both modes
+  background-color: var(--landing-overlay-bg); // Use CSS variable for overlay
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -261,15 +261,15 @@ const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
 
 .landing-title {
   font-size: clamp(2rem, 5vw, 3rem); // 响应式字体大小
-  font-weight: bold;
+  font-weight: 700; // Explicitly bold
   margin-bottom: 0.5em;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); // Softer text shadow
 }
 
 .landing-subtitle {
   font-size: clamp(1.2rem, 3vw, 1.5rem);
   margin-bottom: 2em;
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); // Softer text shadow
 }
 
 .scroll-indicator {
@@ -309,7 +309,7 @@ const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
 .main-content-area {
   display: flex;
   gap: 20px; // 主内容区和侧边栏的间距
-  padding: 40px 20px;
+  padding: clamp(20px, 4vw, 40px) clamp(15px, 3vw, 20px); // Responsive padding
   max-width: 1300px; // 整体内容区域最大宽度
   margin: 0 auto; // 居中
 
@@ -323,14 +323,6 @@ const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
   min-width: 0; // 防止 flex item 内容溢出
 }
 
-.posts-section-title {
-  // 原 .section-title
-  text-align: center;
-  font-size: clamp(2rem, 4vw, 2.5rem);
-  margin-bottom: 40px;
-  color: var(--el-text-color-primary); // Use Element Plus primary text color
-}
-
 .sidebar {
   flex: 1; // 侧边栏占据较小比例
   min-width: 280px; // 侧边栏最小宽度
@@ -338,123 +330,78 @@ const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
 }
 
 .posts-grid {
-  column-count: 3; // 默认三列
+  column-count: 3;
   column-gap: 20px;
 
   @media (max-width: 992px) {
-    // 中等屏幕两列
-    // 当侧边栏堆叠时，这里可以恢复为3列或保持2列，取决于偏好
     column-count: 2;
   }
 
   @media (max-width: 768px) {
-    // 小屏幕单列
     column-count: 1;
   }
-
-  @media (min-width: 1200px) {
-    // 较大屏幕，如果空间足够，可以考虑恢复3列
-    // column-count: 3; // 如果希望在有侧边栏时，文章区依然是3列，需要调整 .blog-posts-container 的 flex-basis 或宽度
-  }
+  // Note: For very large screens with sidebar, 3 columns might be too wide for the main content.
+  // Consider adjusting flex-basis of .blog-posts-container if more columns are desired on large screens.
 }
 
-.post-item {
-  background-color: var(--el-bg-color);
-  border: 1px solid var(--el-border-color);
-  border-radius: 8px;
-  margin-bottom: 20px;
-  padding: 15px;
-  display: flex; // 改为flex布局，方便内容组织
-  flex-direction: column; // 垂直排列图片和内容
-  box-shadow: var(--el-box-shadow-light); // Use Element Plus light shadow variable
-  cursor: pointer; // 为整个卡片添加手型光标
-  break-inside: avoid-column; // 防止元素在列中被切割
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+// Styles for .post-category and .post-tags remain here as they are part of the slot content
+// provided by HomeView.vue. The base card styles are now in _blog-post-card.scss.
 
-  &:hover {
-    transform: translateY(-5px); // 保持向上浮动效果
-    box-shadow: var(--el-box-shadow); // 使用 Element Plus 的标准阴影变量，它会随主题变化
-  }
-}
-
-.post-image {
-  width: 100%;
-  object-fit: cover; // 保持图片比例并填充
-  border-radius: 6px;
-  margin-bottom: 15px;
-  // cursor: pointer; // 从图片上移除，因为整个卡片都可点击了
-  background-color: var(--el-fill-color-light); // Use Element Plus variable for placeholder/light fill
-}
-
-.post-content {
-  flex-grow: 1; // 内容区占据剩余空间
-  display: flex;
-  flex-direction: column;
-}
-
+// Styling for the content provided to the 'category' slot
 .post-meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.8rem;
-  color: var(--el-text-color-secondary);
+  font-size: 0.85rem; // Slightly larger meta text
+  color: var(--el-text-color-secondary); // Element Plus secondary text color
   margin-bottom: 8px;
+}
 
-  .post-category {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
+.post-category { // This class is used within the #category slot
+  display: flex;
+  align-items: center;
+  cursor: pointer;
 
-    .el-icon {
-      margin-right: 4px;
-    }
+  .tag-icon-svg { // Icon within the category span
+    color: currentColor; // Inherits color from .post-category or .post-meta
+    // margin-right is already on tag-icon-svg globally, but can be adjusted if needed
+  }
+
+  &:hover {
+    color: var(--el-color-primary);
+    text-decoration: underline;
   }
 }
 
+// Styling for the content provided to the 'tags' slot
 .post-tags {
-  margin-top: auto; // 将标签推到底部
-  padding-top: 10px; // 与摘要之间留出一些空间
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 
   .post-tag-item {
     cursor: pointer;
-    // el-tag 已经有自己的样式，这里可以微调
-    // 例如，如果想让标签更小或有不同背景
-    // background-color: var(--el-color-info-light-8);
-    // border-color: var(--el-color-info-light-5);
-    // color: var(--el-text-color-secondary);
+    // Specific styling for el-tag if needed, beyond Element Plus defaults
   }
-}
-
-.post-title {
-  font-size: 1.4rem;
-  font-weight: 600;
-  margin-top: 0;
-  margin-bottom: 10px;
-  color: var(--el-text-color-primary);
-}
-
-.post-excerpt {
-  font-size: 0.95rem;
-  line-height: 1.6;
-  color: var(--el-text-color-regular);
 }
 
 // Sidebar Info Cards Styling
 .info-card {
-  background-color: var(--el-bg-color-overlay); // 使用 Element Plus 覆盖层背景色，更适合卡片
-  border: 1px solid var(--el-border-color);
+  // Acrylic effect
+  background-color: var(--acrylic-bg-current);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%); /* Safari */
+
+  border: 1px solid var(--acrylic-sidebar-border-color);
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 20px;
-  box-shadow: var(--el-box-shadow-lighter);
+  box-shadow: 0 2px 12px 0 var(--acrylic-shadow-current);
 
   .info-card-title {
     font-size: 1.2rem;
     font-weight: 600;
-    color: var(--el-text-color-primary);
+    color: var(--el-text-color-primary); // Element Plus primary text color
     margin-top: 0;
     margin-bottom: 15px;
     padding-bottom: 10px;
@@ -476,15 +423,14 @@ const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
 
   .bio {
     font-size: 0.9rem;
-    color: var(--el-text-color-secondary);
+    color: var(--el-text-color-secondary); // Element Plus secondary text color
     line-height: 1.5;
   }
 }
 
 .tag-icon-svg {
   margin-right: 8px;
-  font-size: 1.2em;
-  /* 调整 Iconify 图标大小 */
+  font-size: 1.1em; // Slightly smaller default icon size for lists
   vertical-align: middle;
   /* 确保图标与文字垂直对齐良好 */
 }
@@ -496,20 +442,22 @@ const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
   margin: 0;
 
   li {
-    margin-bottom: 8px;
+    padding: 6px 0; // Add some padding for list items
+    display: flex;
+    align-items: center;
+    font-size: 0.95rem;
+    color: var(--el-text-color-regular); // Element Plus regular text color
+    cursor: pointer;
+    transition: color 0.2s ease;
+    border-radius: 4px; // For hover effect background
 
-    a {
-      text-decoration: none;
-      color: var(--el-text-color-regular);
-      font-size: 0.95rem;
-      transition: color 0.2s ease;
-
-      &:hover {
-        color: var(--el-color-primary);
-      }
+    &:hover {
+      color: var(--el-color-primary); // Use theme primary color on hover
+      // background-color: var(--el-fill-color-light); // Optional: subtle background on hover
     }
   }
 }
+
 
 .tag-list {
   display: flex;
@@ -517,17 +465,20 @@ const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
   gap: 8px;
 
   li {
-    margin-bottom: 0; // 因为使用了gap
+    padding: 0; // Reset padding as .tag-item will handle it
+    &:hover { background-color: transparent; } // Prevent li hover if tag-item handles it
   }
 
   .tag-item {
-    background-color: var(--el-fill-color-light);
+    background-color: var(--el-fill-color); // Use a slightly darker fill than -light
     padding: 4px 10px;
     border-radius: 4px;
     font-size: 0.85rem;
+    color: var(--el-text-color-secondary);
+    transition: background-color 0.2s ease, color 0.2s ease;
 
     &:hover {
-      background-color: var(--el-color-primary-light-7);
+      background-color: var(--el-color-primary);
       color: var(--el-color-primary);
     }
   }
@@ -540,13 +491,13 @@ const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
   align-items: center; // 垂直居中不同大小的标签
 
   .tag-cloud-item {
-    text-decoration: none;
-    color: var(--el-text-color-secondary); // 初始颜色
+    color: var(--el-text-color-secondary); // Element Plus secondary text color
     padding: 2px 5px;
     transition: color 0.2s ease, transform 0.2s ease;
+    cursor: pointer;
 
     &:hover {
-      color: var(--el-color-primary);
+      color: var(--el-color-primary); // Use theme primary color on hover
       transform: scale(1.1);
     }
   }
@@ -563,14 +514,13 @@ const siteEstablishedDate = ref('2023-10-26'); // 模拟建站日期
       justify-content: space-between;
       align-items: center;
       padding: 8px 0;
-      font-size: 0.9rem;
-      color: var(--el-text-color-regular);
+      font-size: 0.9rem; // Consistent font size
+      color: var(--el-text-color-regular); // Element Plus regular text color
       border-bottom: 1px dashed var(--el-border-color-lighter);
 
       &:last-child {
         border-bottom: none;
       }
-
       strong {
         color: var(--el-text-color-primary);
         font-weight: 600;

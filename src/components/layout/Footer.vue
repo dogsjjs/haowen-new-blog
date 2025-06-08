@@ -1,6 +1,6 @@
 <template>
   <el-footer class="layout-footer acrylic-style">
-    <p>&copy; {{ new Date().getFullYear() }} My Application. All rights reserved.</p>
+    <p>&copy; {{ new Date().getFullYear() }} Haowen Blog. All rights reserved.</p>
   </el-footer>
 </template>
 
