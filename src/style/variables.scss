@@ -137,6 +137,17 @@ $box-shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0
   --acrylic-bg-current: var(--acrylic-bg-light);
   --acrylic-border-current: var(--acrylic-border-light);
   --acrylic-shadow-current: var(--acrylic-shadow-light);
+
+  --page-bg-color: #f0f2f5;
+  --text-color-primary: #303133;
+  --text-color-secondary: #909399;
+  --card-bg-color: #ffffff;
+  --card-border-color: #e4e7ed;
+  --card-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  --card-hover-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.15);
+  --dialog-bg-color: #ffffff;
+  --dialog-overlay-bg-color: rgba(0, 0, 0, 0.6);
+  /* ...更多变量 */
 }
 
 html.dark {
@@ -160,4 +171,15 @@ html.dark {
   --category-tag-active-bg: var(--el-color-primary); // Element Plus primary color (adapts)
   --category-tag-active-text-color: #ffffff; // Or var(--el-color-white)
   --category-tag-active-border-color: var(--el-color-primary);
+
+
+  --page-bg-color: var(--card-bg-dark);
+  --text-color-primary: #e5eaf3;
+  --text-color-secondary: #a3a6ad;
+  --card-bg-color: var(--card-bg-dark);
+  --card-border-color: #3a3a3a;
+  --card-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.3);
+  --card-hover-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.4);
+  --dialog-bg-color: var(--card-bg-dark);
+  --dialog-overlay-bg-color: rgba(0, 0, 0, 0.7);
 }
