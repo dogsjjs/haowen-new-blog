@@ -147,7 +147,12 @@ $box-shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0
   --card-hover-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.15);
   --dialog-bg-color: #ffffff;
   --dialog-overlay-bg-color: rgba(0, 0, 0, 0.6);
-  /* ...更多变量 */
+  
+  --hero-text-color: #ffffff;
+  --hero-overlay-bg: rgba(0, 0, 0, 0.45);
+  --code-bg-color: #f4f4f4;
+  --code-text-color: #333333;
+  --blockquote-bg-color: #f9f9f9;
 }
 
 html.dark {
@@ -182,4 +187,10 @@ html.dark {
   --card-hover-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.4);
   --dialog-bg-color: var(--card-bg-dark);
   --dialog-overlay-bg-color: rgba(0, 0, 0, 0.7);
+
+  --hero-text-color: #e5eaf3;
+  --hero-overlay-bg: rgba(0, 0, 0, 0.55);
+  --code-bg-color: #2d2d2d;
+  --code-text-color: #c7c7c7;
+  --blockquote-bg-color: #222222;
 }

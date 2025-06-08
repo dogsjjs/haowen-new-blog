@@ -10,6 +10,12 @@ const routes: Array<RouteRecordRaw> = [
     meta: { title: "首页", showInMenu: false },
   },
   {
+    path: "/post/:postId",
+    name: "postViews",
+    component: () => import("@/views/PostView.vue"),
+    meta: { title: "文章", showInMenu: false },
+  },
+  {
     path: "/categories/:categoryId",
     name: "categoryViews",
     component: () => import("@/views/CategoryView.vue"),
