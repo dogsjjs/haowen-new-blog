@@ -1,11 +1,12 @@
 import { createRouter, createWebHistory } from "vue-router";
 import type { RouteRecordRaw } from "vue-router";
+import NProgress from "nprogress";
+
 import HomeView from "../views/HomeView.vue";
 import NotFoundView from "@/views/error/NotFoundView.vue";
 import LoginView from "@/views/admin/LoginView.vue";
 
 import AdminLayout from "@/layouts/AdminLayout.vue";
-import AdminDashboardView from "@/views/admin/DashboardView.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -63,48 +64,59 @@ const routes: Array<RouteRecordRaw> = [
     meta: { title: "推荐", showInMenu: true, menuIndex: "5" },
   },
   {
-    path: '/login',
-    name: 'login',
+    path: "/login",
+    name: "login",
     component: LoginView,
-    meta: { guest: true } // 可选：如果已登录，访问登录页时可以重定向到后台
+    meta: { title: '登录', guest: true }, // 可选：如果已登录，访问登录页时可以重定向到后台
   },
   // 后台管理路由
   {
-    path: '/admin',
+    path: "/admin",
     meta: { requiresAuth: true, layout: AdminLayout }, // 这个父路由下的所有子路由都需要认证
     children: [
       {
-        path: '', // 默认子路由，例如 /admin
-        name: 'admin-dashboard',
-        component: AdminDashboardView,
+        path: "", // 默认子路由，例如 /admin
+        name: "admin-dashboard",
+        component: () => import("@/views/admin/DashboardView.vue"),
         meta: {
           layout: AdminLayout, // 由 App.vue 使用
           showInSidebar: true, // 在侧边栏显示
-          title: '仪表盘',     // 菜单标题
-          icon: 'mdi:view-dashboard-outline' // Iconify 图标名称
-        }
+          title: "仪表盘", // 菜单标题
+          icon: "mdi:view-dashboard-outline", // Iconify 图标名称
+        },
       },
       {
-        path: 'categories',
-        name: 'admin-categories',
-        component: () => import('@/views/admin/CategoriesManagementView.vue'),
+        path: "categories",
+        name: "admin-categories",
+        component: () => import("@/views/admin/CategoriesManagementView.vue"),
         meta: {
           layout: AdminLayout,
           showInSidebar: true,
-          title: '博客类型管理',
-          icon: 'mdi:account-group-outline'
-        }
+          title: "博客类型管理",
+          icon: "mdi:format-list-bulleted-type",
+        },
       },
       {
-        path: 'settings',
-        name: 'admin-settings',
-        component: () => import('@/views/admin/SettingsView.vue'),
+        path: "tags",
+        name: "admin-tags",
+        component: () => import("@/views/admin/TagsManagementView.vue"),
         meta: {
           layout: AdminLayout,
           showInSidebar: true,
-          title: '系统设置',
-          icon: 'mdi:cog-outline'
-        }
+          title: "博客标签管理",
+          icon: "mdi:tag",
+        },
+      },
+      {
+        path: "settings",
+        name: "admin-settings",
+        component: () => import("@/views/admin/SettingsView.vue"),
+        meta: {
+          layout: AdminLayout,
+          showInSidebar: true,
+          title: "系统设置",
+          icon: "mdi:cog-outline",
+        },
       },
       // 在这里添加更多的后台管理子路由
       // {
@@ -113,9 +125,9 @@ const routes: Array<RouteRecordRaw> = [
       //   component: () => import('../views/admin/UsersView.vue'),
       //   meta: { requiresAuth: true }
       // },
-    ]
+    ],
   },
-  { path: "/:pathMatch(.*)*", name: "NotFound", component: NotFoundView },
+  { path: "/:pathMatch(.*)*", name: "NotFound", component: NotFoundView, meta: { title: "404" } }, // 捕获所有未匹配的路由
 ];
 
 const router = createRouter({
@@ -130,32 +142,43 @@ const authService = {
     // 例如: return !!localStorage.getItem('user-token');
     // 为了演示，我们暂时返回 false，表示未登录
     // 您可以修改这里来测试登录和未登录的情况
-    return !!localStorage.getItem('isAuthenticated'); // 示例：使用localStorage
+    return !!localStorage.getItem("isAuthenticated"); // 示例：使用localStorage
   },
-  login: () => { // 模拟登录
-    localStorage.setItem('isAuthenticated', 'true');
+  login: () => {
+    // 模拟登录
+    localStorage.setItem("isAuthenticated", "true");
   },
-  logout: () => { // 模拟登出
-    localStorage.removeItem('isAuthenticated');
-  }
+  logout: () => {
+    // 模拟登出
+    localStorage.removeItem("isAuthenticated");
+  },
 };
 
 // 全局前置守卫
 router.beforeEach((to, from, next) => {
+  NProgress.start();
   const isLoggedIn = authService.isLoggedIn();
 
   if (to.meta.requiresAuth && !isLoggedIn) {
     // 如果目标路由需要认证但用户未登录
-    console.log('User not authenticated, redirecting to login.');
-    next({ name: 'login', query: { redirect: to.fullPath } }); // 重定向到登录页，并带上原始目标路径
+    console.log("User not authenticated, redirecting to login.");
+    next({ name: "login", query: { redirect: to.fullPath } }); // 重定向到登录页，并带上原始目标路径
   } else if (to.meta.guest && isLoggedIn) {
     // 如果目标路由是访客页面（如登录页）但用户已登录
-    console.log('User already authenticated, redirecting to admin dashboard.');
-    next({ name: 'admin-dashboard' }); // 重定向到后台首页
-  }
-  else {
+    console.log("User already authenticated, redirecting to admin dashboard.");
+    next({ name: "admin-dashboard" }); // 重定向到后台首页
+  } else {
     // 其他情况，正常放行
     next();
+    NProgress.done();
+  }
+});
+
+router.afterEach((to) => {
+  NProgress.done();
+  // 根据路由名动态设置文档的标题
+  if (to.meta && to.meta.title) {
+    document.title = to.meta.title as string;
   }
 });
 
