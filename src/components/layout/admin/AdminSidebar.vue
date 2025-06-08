@@ -65,7 +65,6 @@ const sidebarMenuItems = computed(() => {
   border-radius: 4px;
   margin-bottom: 5px;
 }
-
 .sidebar-icon {
   margin-right: 8px;
   font-size: 1.1em;

@@ -108,6 +108,17 @@ const routes: Array<RouteRecordRaw> = [
         },
       },
       {
+        path: "posts",
+        name: "admin-posts",
+        component: () => import("@/views/admin/PostsManagementView.vue"),
+        meta: {
+          layout: AdminLayout,
+          showInSidebar: true,
+          title: "博客文章管理",
+          icon: "mdi:post-it-notes-outline",
+        },
+      },
+      {
         path: "settings",
         name: "admin-settings",
         component: () => import("@/views/admin/SettingsView.vue"),
