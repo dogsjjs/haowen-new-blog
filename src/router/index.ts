@@ -1,6 +1,11 @@
 import { createRouter, createWebHistory } from "vue-router";
 import type { RouteRecordRaw } from "vue-router";
 import HomeView from "../views/HomeView.vue";
+import NotFoundView from "@/views/error/NotFoundView.vue";
+import LoginView from "@/views/admin/LoginView.vue";
+
+import AdminLayout from "@/layouts/AdminLayout.vue";
+import AdminDashboardView from "@/views/admin/DashboardView.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -57,11 +62,74 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import("@/views/RecommendationsView.vue"),
     meta: { title: "推荐", showInMenu: true, menuIndex: "5" },
   },
+  {
+    path: '/login',
+    name: 'login',
+    component: LoginView,
+    meta: { guest: true } // 可选：如果已登录，访问登录页时可以重定向到后台
+  },
+  // 后台管理路由
+  {
+    path: '/admin',
+    meta: { requiresAuth: true, layout: AdminLayout }, // 这个父路由下的所有子路由都需要认证
+    children: [
+      {
+        path: '', // 默认子路由，例如 /admin
+        name: 'admin-dashboard',
+        component: AdminDashboardView,
+        // meta: { requiresAuth: true } // 也可以在子路由单独设置，但父路由设置更方便
+      },
+      // 在这里添加更多的后台管理子路由
+      // {
+      //   path: 'users',
+      //   name: 'admin-users',
+      //   component: () => import('../views/admin/UsersView.vue'),
+      //   meta: { requiresAuth: true }
+      // },
+    ]
+  },
+  { path: "/:pathMatch(.*)*", name: "NotFound", component: NotFoundView },
 ];
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
+});
+
+// 模拟一个简单的认证服务
+const authService = {
+  isLoggedIn: (): boolean => {
+    // 在实际应用中，这里会检查 token、session 或 Vuex/Pinia store
+    // 例如: return !!localStorage.getItem('user-token');
+    // 为了演示，我们暂时返回 false，表示未登录
+    // 您可以修改这里来测试登录和未登录的情况
+    return !!localStorage.getItem('isAuthenticated'); // 示例：使用localStorage
+  },
+  login: () => { // 模拟登录
+    localStorage.setItem('isAuthenticated', 'true');
+  },
+  logout: () => { // 模拟登出
+    localStorage.removeItem('isAuthenticated');
+  }
+};
+
+// 全局前置守卫
+router.beforeEach((to, from, next) => {
+  const isLoggedIn = authService.isLoggedIn();
+
+  if (to.meta.requiresAuth && !isLoggedIn) {
+    // 如果目标路由需要认证但用户未登录
+    console.log('User not authenticated, redirecting to login.');
+    next({ name: 'login', query: { redirect: to.fullPath } }); // 重定向到登录页，并带上原始目标路径
+  } else if (to.meta.guest && isLoggedIn) {
+    // 如果目标路由是访客页面（如登录页）但用户已登录
+    console.log('User already authenticated, redirecting to admin dashboard.');
+    next({ name: 'admin-dashboard' }); // 重定向到后台首页
+  }
+  else {
+    // 其他情况，正常放行
+    next();
+  }
 });
 
 export default router;
@@ -80,4 +148,3 @@ export function generateMenuItems(
     }))
     .sort((a, b) => parseInt(a.index) - parseInt(b.index)); // 按 menuIndex 排序
 }
-
