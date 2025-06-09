@@ -245,33 +245,36 @@
 import { ref, computed, onMounted, reactive, nextTick, watch } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type UploadProps, type UploadRawFile } from 'element-plus';
 import { Search as SearchIcon, Plus as PlusIcon, Edit as EditIcon, Delete as DeleteIcon, Picture as PictureIcon } from '@element-plus/icons-vue';
-import { useThemeStore } from '@/stores/theme'; // 导入 theme store
+import { useThemeStore } from '@/stores/theme'; // 导入主题 store
 import { MdEditor, MdPreview, type Themes } from 'md-editor-v3';
 import 'md-editor-v3/lib/style.css';
 
-// --- Interfaces ---
-interface BlogCategory { // From CategoriesManagementView
+// --- 接口定义 ---
+// 博客分类
+interface BlogCategory {
   id: string;
   name: string;
   description?: string;
 }
 
-interface BlogTag { // From TagsManagementView
+// 博客标签
+interface BlogTag {
   id: string;
   name: string;
   description?: string;
 }
 
+// 博客文章
 interface BlogPost {
   id: string;
   title: string;
-  slug?: string; // for custom URL
-  coverImage?: string; // URL of the cover image
+  slug?: string; // 自定义 URL
+  coverImage?: string; // 首图 URL
   categoryId: string;
-  category?: BlogCategory; // Populated from categoryId
+  category?: BlogCategory; // 分类对象
   tagIds: string[];
-  tags?: BlogTag[]; // Populated from tagIds
-  content: string; // Markdown content
+  tags?: BlogTag[]; // 标签对象数组
+  content: string; // Markdown 内容
   isRecommended: boolean;
   isPublic: boolean;
   viewCount: number;
@@ -279,15 +282,18 @@ interface BlogPost {
   updateTime: Date;
 }
 
-// --- Default Values ---
-const defaultCoverImage = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2280%22%20height%3D%2240%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2080%2040%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3Cstyle%20type%3D%22text%2Fcss%22%3E%23holder_17ba89a291d%20text%20%7B%20fill%3A%23999%3Bfont-weight%3Anormal%3Bfont-family%3AHelvetica%2C%20monospace%3Bfont-size%3A10pt%20%7D%20%3C%2Fstyle%3E%3C%2Fdefs%3E%3Cg%20id%3D%22holder_17ba89a291d%22%3E%3Crect%20width%3D%2280%22%20height%3D%2240%22%20fill%3D%22%23eee%22%3E%3C%2Frect%3E%3Cg%3E%3Ctext%20x%3D%2224.5%22%20y%3D%2224.5%22%3ENo%20Image%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E';
+// --- 默认首图 ---
+const defaultCoverImage = 'data:image/svg+xml;charset=UTF-8,...'; // SVG 占位图
 
-
-// --- Reactive State ---
+// --- 响应式状态 ---
+// 文章列表
 const allPosts = ref<BlogPost[]>([]);
+// 分类选项
 const availableCategories = ref<BlogCategory[]>([]);
+// 标签选项
 const availableTags = ref<BlogTag[]>([]);
 
+// 筛选表单
 const filterForm = reactive({
   title: '',
   categoryId: '',
@@ -296,31 +302,36 @@ const filterForm = reactive({
   isPublic: null as boolean | null,
 });
 
+// 分页相关
 const currentPage = ref(1);
 const pageSize = ref(10);
-const loading = ref(false);
-const formSubmitting = ref(false);
-const selectOptionsLoading = ref(false); // For loading categories/tags in form
+const loading = ref(false); // 列表加载中
+const formSubmitting = ref(false); // 表单提交中
+const selectOptionsLoading = ref(false); // 分类/标签加载中
 
+// 新增/编辑弹窗
 const dialogVisible = ref(false);
 const dialogTitle = ref('');
 const postFormRef = ref<FormInstance>();
 
+// 详情弹窗
 const postDetailsDialogVisible = ref(false);
 const selectedPostForDetails = ref<BlogPost | null>(null);
-const previewIdForPost = 'md-preview-post'; // Unique ID for post preview
+const previewIdForPost = 'md-preview-post'; // 预览组件唯一 ID
 
-
+// 打开详情弹窗
 const showPostDetails = (post: BlogPost) => {
   selectedPostForDetails.value = post;
   postDetailsDialogVisible.value = true;
 };
 
+// 关闭详情弹窗
 const closePostDetailsDialog = () => {
   postDetailsDialogVisible.value = false;
   selectedPostForDetails.value = null;
 };
 
+// 初始化表单数据
 const initialPostFormState = (): Omit<BlogPost, 'id' | 'category' | 'tags' | 'viewCount' | 'createTime' | 'updateTime'> & { id: string | null } => ({
   id: null,
   title: '',
@@ -334,32 +345,33 @@ const initialPostFormState = (): Omit<BlogPost, 'id' | 'category' | 'tags' | 'vi
 });
 const postForm = ref(initialPostFormState());
 
-const themeStore = useThemeStore(); // 使用 store
-
+// 主题（明暗）切换
+const themeStore = useThemeStore();
 const markdowkTheme = computed(() => {
-  // This can be dynamic based on user preference or settings
-  return themeStore.isDark ? 'dark' : 'light'; // or 'light', etc.
+  return themeStore.isDark ? 'dark' : 'light';
 });
 
+// 表单校验规则
 const postFormRules = reactive<FormRules>({
   title: [{ required: true, message: '文章标题不能为空', trigger: 'blur' }],
   categoryId: [{ required: true, message: '请选择博客类型', trigger: 'change' }],
-  // tagIds: [{ type: 'array', min: 1, message: '至少选择一个标签', trigger: 'change' }], // Optional: make tags required
+  // tagIds: [{ type: 'array', min: 1, message: '至少选择一个标签', trigger: 'change' }], // 可选：标签必选
   content: [{ required: true, message: '文章内容不能为空', trigger: 'blur' }],
   coverImage: [{ required: false, message: '请上传博客首图', trigger: 'change' }],
 });
 
-// --- API Service Placeholders ---
+// --- API 服务（模拟） ---
+// 实际开发中应替换为真实 API 调用
 const apiClient = {
-  // Posts
+  // 获取文章列表（带筛选、分页）
   async getPosts(params: {
     page: number, pageSize: number, title?: string, categoryId?: string,
     tagIds?: string[], isRecommended?: boolean | null, isPublic?: boolean | null
   }): Promise<{ data: BlogPost[], total: number }> {
-    console.log('API CALL: getPosts with params', params);
+    // 模拟接口延迟
     await new Promise(resolve => setTimeout(resolve, 700));
-    // Simulate filtering and populating category/tags
-    let items = generateMockPosts(100); // Generate a larger set for filtering simulation
+    // 生成 mock 数据并模拟筛选
+    let items = generateMockPosts(100);
 
     if (params.title) {
       items = items.filter(p => p.title.toLowerCase().includes(params.title!.toLowerCase()));
@@ -380,6 +392,7 @@ const apiClient = {
     const total = items.length;
     const start = (params.page - 1) * params.pageSize;
     const end = start + params.pageSize;
+    // 填充分类和标签对象
     const paginatedData = items.slice(start, end).map(post => ({
       ...post,
       category: availableCategories.value.find(c => c.id === post.categoryId),
@@ -387,8 +400,8 @@ const apiClient = {
     }));
     return { data: paginatedData, total };
   },
+  // 新建文章
   async createPost(data: Omit<BlogPost, 'id' | 'category' | 'tags' | 'viewCount' | 'createTime' | 'updateTime'>): Promise<BlogPost> {
-    console.log('API CALL: createPost with data', data);
     await new Promise(resolve => setTimeout(resolve, 300));
     const newPost: BlogPost = {
       ...data,
@@ -401,8 +414,8 @@ const apiClient = {
     };
     return newPost;
   },
+  // 更新文章
   async updatePost(id: string, data: Partial<Omit<BlogPost, 'id' | 'category' | 'tags' | 'viewCount' | 'createTime' | 'updateTime'>>): Promise<BlogPost> {
-    console.log('API CALL: updatePost with id and data', id, data);
     await new Promise(resolve => setTimeout(resolve, 300));
     const existingPost = allPosts.value.find(p => p.id === id) || generateMockPosts(1)[0];
     const updatedPostData = { ...existingPost, ...data, updateTime: new Date() } as BlogPost;
@@ -410,37 +423,35 @@ const apiClient = {
     updatedPostData.tags = updatedPostData.tagIds.map(tid => availableTags.value.find(t => t.id === tid)).filter(t => t) as BlogTag[];
     return updatedPostData;
   },
+  // 删除文章
   async deletePost(id: string): Promise<void> {
-    console.log('API CALL: deletePost with id', id);
     await new Promise(resolve => setTimeout(resolve, 300));
   },
-  // Categories and Tags for select options
+  // 获取分类选项
   async getCategoriesForSelect(): Promise<BlogCategory[]> {
-    console.log('API CALL: getCategoriesForSelect');
     await new Promise(resolve => setTimeout(resolve, 200));
-    // In a real app, this might be a dedicated endpoint or reuse CategoriesManagementView's getCategories
     return [
       { id: 'cat1', name: '技术分享' }, { id: 'cat2', name: '生活随笔' },
       { id: 'cat3', name: '项目总结' }, { id: 'cat4', name: '学习笔记' }
     ];
   },
+  // 获取标签选项
   async getTagsForSelect(): Promise<BlogTag[]> {
-    console.log('API CALL: getTagsForSelect');
     await new Promise(resolve => setTimeout(resolve, 200));
     return [
       { id: 'tag1', name: 'Vue' }, { id: 'tag2', name: 'JavaScript' }, { id: 'tag3', name: '后端' },
       { id: 'tag4', name: '随笔' }, { id: 'tag5', name: 'ElementPlus' }, { id: 'tag6', name: 'Node.js' }
     ];
   },
+  // 上传首图
   async uploadCoverImage(file: File): Promise<{ url: string }> {
-    console.log('API CALL: uploadCoverImage with file', file.name);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate upload
-    // In a real app, upload the file and return its URL
-    return { url: URL.createObjectURL(file) }; // For mock, return a blob URL
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    return { url: URL.createObjectURL(file) }; // 返回本地 blob URL
   }
 };
 
-// --- Mock Data Generation ---
+// --- Mock 数据生成 ---
+// 生成指定数量的 mock 文章
 const generateMockPosts = (count: number = 25): BlogPost[] => {
   const posts: BlogPost[] = [];
   const sampleTitles = ['深入理解Vue3响应式原理', '我的高效工作流分享', 'Element Plus实践指南', 'Node.js后端开发心得', '一次难忘的旅行', '关于状态管理的思考'];
@@ -450,7 +461,7 @@ const generateMockPosts = (count: number = 25): BlogPost[] => {
     const createTime = new Date(Date.now() - Math.floor(Math.random() * 1000 * 60 * 60 * 24 * 90));
     const updateTime = Math.random() > 0.5 ? new Date(createTime.getTime() + Math.floor(Math.random() * 1000 * 60 * 60 * 24 * 10)) : createTime;
     const randomCategory = availableCategories.value[Math.floor(Math.random() * availableCategories.value.length)];
-    const numTags = Math.floor(Math.random() * 4); // 0 to 3 tags
+    const numTags = Math.floor(Math.random() * 4); // 0~3 个标签
     const randomTags = availableTags.value.sort(() => 0.5 - Math.random()).slice(0, numTags);
 
     posts.push({
@@ -471,7 +482,8 @@ const generateMockPosts = (count: number = 25): BlogPost[] => {
   return posts.sort((a, b) => b.createTime.getTime() - a.createTime.getTime());
 };
 
-// --- Data Fetching ---
+// --- 数据获取 ---
+// 获取分类和标签选项
 const fetchSelectOptions = async () => {
   selectOptionsLoading.value = true;
   try {
@@ -482,13 +494,13 @@ const fetchSelectOptions = async () => {
     availableCategories.value = categories;
     availableTags.value = tags;
   } catch (error) {
-    console.error("Failed to fetch select options:", error);
     ElMessage.error('获取分类或标签选项失败！');
   } finally {
     selectOptionsLoading.value = false;
   }
 };
 
+// 获取文章列表
 const fetchPosts = async () => {
   loading.value = true;
   try {
@@ -503,13 +515,8 @@ const fetchPosts = async () => {
     };
     const response = await apiClient.getPosts(params);
     allPosts.value = response.data;
-    // totalPosts is computed based on filteredPosts for client-side filtering,
-    // or should be set from response.total for server-side.
-    // For this mock, apiClient.getPosts already returns total based on its internal filtering.
-    // So, we'll use a computed property for totalPosts based on the *potentially* client-side filtered list.
-    // If server does all filtering, totalPosts should be `response.total`.
+    // 这里 allPosts.value 已经是筛选和分页后的数据
   } catch (error) {
-    console.error("Failed to fetch posts:", error);
     ElMessage.error('获取文章列表失败！');
     allPosts.value = [];
   } finally {
@@ -517,75 +524,41 @@ const fetchPosts = async () => {
   }
 };
 
+// 组件挂载时加载分类、标签和文章
 onMounted(async () => {
-  await fetchSelectOptions(); // Fetch options first
-  // Then generate mock data that might depend on these options or fetch real posts
-  // allPosts.value = generateMockPosts(); // Initial mock load if not using fetchPosts on mount
-  await fetchPosts(); // Fetch posts after options are loaded
+  await fetchSelectOptions();
+  await fetchPosts();
 });
 
-// Watch for filter changes to re-fetch posts
+// 监听筛选条件变化，自动刷新列表
 watch(filterForm, () => {
-  currentPage.value = 1; // Reset to first page on filter change
+  currentPage.value = 1;
   fetchPosts();
 }, { deep: true });
 
-
-// --- Computed Properties ---
-// For client-side filtering (if API doesn't do it all)
-// If API handles all filtering, `filteredPosts` would just be `allPosts.value`
+// --- 计算属性 ---
+// 过滤后的文章（实际已由 API 处理，这里保留以便扩展）
 const filteredPosts = computed(() => {
-  // This computed property is less critical if the API handles all filtering.
-  // It's kept here to show how client-side filtering would work on top of API results if needed.
-  // Or, if `fetchPosts` always gets ALL posts and filtering is purely client-side.
-  // Given the current `fetchPosts` and `apiClient.getPosts` mock, `allPosts.value` is already "filtered" by the mock API.
   return allPosts.value;
 });
 
+// 总文章数（实际应由 API 返回）
 const totalPosts = computed(() => {
-  // If using server-side pagination and filtering, this should come from API response.
-  // For current mock setup where apiClient.getPosts returns a total, we can use that.
-  // However, if we were doing more client-side filtering on top of API results,
-  // this would be `filteredPosts.value.length`.
-  // Let's assume for now `apiClient.getPosts` gives the correct total for the current filters.
-  // If `fetchPosts` updates a separate `serverTotalPosts` ref, use that.
-  // For simplicity with the current mock, we'll use the length of the data returned by the mock API.
-  // This might need adjustment based on how `apiClient.getPosts` truly behaves with a real backend.
-  // A more robust way for client-side pagination on a fully fetched list:
-  // return allPosts.value.filter(post => { /* apply all filterForm conditions here */ }).length;
-  // But since `fetchPosts` is already applying filters via `apiClient.getPosts` (mocked),
-  // the `allPosts.value` is the "filtered" list from the "server".
-  // So, `totalPosts` should reflect the total count of items matching the filter on the server.
-  // The mock `apiClient.getPosts` returns a `total`, but we are not storing it directly.
-  // Let's adjust `fetchPosts` to store this total.
-
-  // Re-evaluating: `paginatedPosts` will use `filteredPosts`. `totalPosts` should be the length of `filteredPosts`.
-  return filteredPosts.value.length; // This is for client-side pagination after API call.
-  // If API does pagination, `el-pagination :total` should be from API.
-  // The current `apiClient.getPosts` mock returns a `total` which we are not using directly for `el-pagination`.
-  // Let's assume the `total` from `apiClient.getPosts` is the true total for the filters.
-  // We need to store it.
+  return filteredPosts.value.length;
 });
 
-// This ref will store the total count from the API if server-side pagination is used.
-const serverSideTotalPosts = ref(0);
-// In fetchPosts, after `const response = await apiClient.getPosts(params);`
-// add `serverSideTotalPosts.value = response.total;`
-// Then, `el-pagination :total="serverSideTotalPosts"`
-
+// 当前页数据（如 API 已分页，这里就是 allPosts.value）
 const paginatedPosts = computed(() => {
-  // If API handles pagination, `paginatedPosts` would just be `allPosts.value`
-  // (assuming `allPosts.value` stores only the current page's data).
-  // For client-side pagination on the fetched (and potentially client-filtered) data:
   const start = (currentPage.value - 1) * pageSize.value;
   const end = start + pageSize.value;
   return filteredPosts.value.slice(start, end);
 });
 
+// 总页数
 const totalPages = computed(() => Math.ceil(totalPosts.value / pageSize.value));
 
-
-// --- Methods ---
+// --- 方法 ---
+// 打开新增弹窗
 const openAddDialog = () => {
   dialogTitle.value = '撰写新文章';
   postForm.value = initialPostFormState();
@@ -595,16 +568,16 @@ const openAddDialog = () => {
   });
 };
 
+// 打开编辑弹窗
 const openEditDialog = (post: BlogPost) => {
   dialogTitle.value = '编辑文章';
-  // Deep copy or reconstruct to avoid direct mutation issues if post object is complex
   postForm.value = {
     id: post.id,
     title: post.title,
     slug: post.slug || '',
     coverImage: post.coverImage || '',
     categoryId: post.categoryId,
-    tagIds: [...post.tagIds], // Ensure new array for tags
+    tagIds: [...post.tagIds],
     content: post.content,
     isRecommended: post.isRecommended,
     isPublic: post.isPublic,
@@ -615,62 +588,53 @@ const openEditDialog = (post: BlogPost) => {
   });
 };
 
+// 关闭弹窗并重置表单
 const closeDialog = () => {
   dialogVisible.value = false;
-  // postFormRef.value?.resetFields(); // This might not fully reset if initialPostFormState changes
-  postForm.value = initialPostFormState(); // More reliable reset
+  postForm.value = initialPostFormState();
 };
 
+// 首图上传前校验与模拟上传
 const handleCoverBeforeUpload: UploadProps['beforeUpload'] = (rawFile: UploadRawFile) => {
   if (rawFile.size / 1024 / 1024 > 2) {
     ElMessage.error('图片大小不能超过 2MB!');
     return false;
   }
-  // Simulate upload and set URL
-  // In a real app, you'd call an upload API here
-  formSubmitting.value = true; // Show loading during "upload"
+  formSubmitting.value = true;
   apiClient.uploadCoverImage(rawFile).then(response => {
     postForm.value.coverImage = response.url;
     ElMessage.success('首图上传成功 (Mock)!');
-  }).catch(err => {
-    console.error("Cover upload failed:", err);
+  }).catch(() => {
     ElMessage.error('首图上传失败!');
   }).finally(() => {
     formSubmitting.value = false;
   });
-
-  return false; // Prevent el-upload's default xhr action
+  return false; // 阻止 el-upload 默认上传
 };
 
-
+// 提交表单（新增或编辑）
 const submitForm = async () => {
   if (!postFormRef.value) return;
   formSubmitting.value = true;
-
   try {
     const valid = await postFormRef.value.validate();
     if (!valid) {
       ElMessage.error('请检查表单输入！');
-      // formSubmitting will be reset in the finally block
       return;
     }
-
-    // Construct data, excluding fields not directly part of the form or meant for backend generation
+    // 构造提交数据
     const dataToSubmit: Omit<BlogPost, 'id' | 'category' | 'tags' | 'viewCount' | 'createTime' | 'updateTime'> = {
       title: postForm.value.title.trim(),
       slug: postForm.value.slug?.trim() || undefined,
       coverImage: postForm.value.coverImage || undefined,
       categoryId: postForm.value.categoryId,
       tagIds: postForm.value.tagIds,
-      content: postForm.value.content, // Assuming Markdown editor updates this
+      content: postForm.value.content,
       isRecommended: postForm.value.isRecommended,
       isPublic: postForm.value.isPublic,
     };
 
-    if (postForm.value.id) { // Edit mode
-      // const updatedPost = await apiClient.updatePost(postForm.value.id, dataToSubmit);
-      // ElMessage.success('文章更新成功！');
-      // Mock update:
+    if (postForm.value.id) { // 编辑
       const index = allPosts.value.findIndex(p => p.id === postForm.value.id);
       if (index !== -1) {
         const oldPost = allPosts.value[index];
@@ -684,10 +648,7 @@ const submitForm = async () => {
         allPosts.value[index] = updatedPostData;
       }
       ElMessage.success('文章更新成功 (Mock)！');
-    } else { // Add mode
-      // const newPost = await apiClient.createPost(dataToSubmit);
-      // ElMessage.success('文章发布成功！');
-      // Mock add:
+    } else { // 新增
       const newMockPostData: BlogPost = {
         ...dataToSubmit,
         id: `post-mock-${Date.now()}`,
@@ -701,7 +662,7 @@ const submitForm = async () => {
       ElMessage.success('文章发布成功 (Mock)！');
     }
     closeDialog();
-    await fetchPosts(); // Re-fetch posts to reflect changes and re-apply server-side logic/pagination
+    await fetchPosts(); // 刷新列表
   } catch (error) {
     ElMessage.error('操作失败，请重试。');
    } finally {
@@ -709,6 +670,7 @@ const submitForm = async () => {
    }
 };
 
+// 删除文章
 const handleDeletePost = (postId: string) => {
   ElMessageBox.confirm('确定要删除这篇文章吗？此操作不可恢复。', '警告', {
     confirmButtonText: '确定删除',
@@ -717,18 +679,14 @@ const handleDeletePost = (postId: string) => {
   }).then(async () => {
     loading.value = true;
     try {
-      // await apiClient.deletePost(postId);
-      // ElMessage.success('文章删除成功！');
-      // Mock delete:
       allPosts.value = allPosts.value.filter(p => p.id !== postId);
       ElMessage.success('文章删除成功 (Mock)！');
-      // Adjust current page if necessary after deletion
+      // 如果当前页被删空且不是第一页，则自动翻回上一页
       if (paginatedPosts.value.length === 0 && currentPage.value > 1 && totalPosts.value > 0) {
         currentPage.value--;
       }
-      await fetchPosts(); // Re-fetch
+      await fetchPosts();
     } catch (error) {
-      console.error("Failed to delete post:", error);
       ElMessage.error('删除文章失败！');
     } finally {
       loading.value = false;
@@ -738,17 +696,20 @@ const handleDeletePost = (postId: string) => {
   });
 };
 
+// 分页大小变化
 const handlePageSizeChange = (val: number) => {
   pageSize.value = val;
   currentPage.value = 1;
   fetchPosts();
 };
 
+// 当前页变化
 const handleCurrentPageChange = (val: number) => {
   currentPage.value = val;
   fetchPosts();
 };
 
+// 格式化日期
 const formatDate = (date: Date | string): string => {
   if (!date) return '';
   const d = typeof date === 'string' ? new Date(date) : date;
