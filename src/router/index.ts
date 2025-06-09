@@ -119,6 +119,17 @@ const routes: Array<RouteRecordRaw> = [
         },
       },
       {
+        path: "diaryBook",
+        name: "admin-diaryBook",
+        component: () => import("@/views/admin/DiaryBookManagementView.vue"),
+        meta: {
+          layout: AdminLayout,
+          showInSidebar: true,
+          title: "日记管理",
+          icon: "mdi:notebook-edit-outline",
+        },
+      },
+      {
         path: "settings",
         name: "admin-settings",
         component: () => import("@/views/admin/SettingsView.vue"),

@@ -605,26 +605,26 @@ const submitForm = async () => {
   if (!postFormRef.value) return;
   formSubmitting.value = true;
 
-  const valid = await postFormRef.value.validate();
-  if (!valid) {
-    ElMessage.error('请检查表单输入！');
-    formSubmitting.value = false;
-    return;
-  }
-
-  // Construct data, excluding fields not directly part of the form or meant for backend generation
-  const dataToSubmit: Omit<BlogPost, 'id' | 'category' | 'tags' | 'viewCount' | 'createTime' | 'updateTime'> = {
-    title: postForm.value.title.trim(),
-    slug: postForm.value.slug?.trim() || undefined,
-    coverImage: postForm.value.coverImage || undefined,
-    categoryId: postForm.value.categoryId,
-    tagIds: postForm.value.tagIds,
-    content: postForm.value.content, // Assuming Markdown editor updates this
-    isRecommended: postForm.value.isRecommended,
-    isPublic: postForm.value.isPublic,
-  };
-
   try {
+    const valid = await postFormRef.value.validate();
+    if (!valid) {
+      ElMessage.error('请检查表单输入！');
+      // formSubmitting will be reset in the finally block
+      return;
+    }
+
+    // Construct data, excluding fields not directly part of the form or meant for backend generation
+    const dataToSubmit: Omit<BlogPost, 'id' | 'category' | 'tags' | 'viewCount' | 'createTime' | 'updateTime'> = {
+      title: postForm.value.title.trim(),
+      slug: postForm.value.slug?.trim() || undefined,
+      coverImage: postForm.value.coverImage || undefined,
+      categoryId: postForm.value.categoryId,
+      tagIds: postForm.value.tagIds,
+      content: postForm.value.content, // Assuming Markdown editor updates this
+      isRecommended: postForm.value.isRecommended,
+      isPublic: postForm.value.isPublic,
+    };
+
     if (postForm.value.id) { // Edit mode
       // const updatedPost = await apiClient.updatePost(postForm.value.id, dataToSubmit);
       // ElMessage.success('文章更新成功！');
@@ -632,20 +632,21 @@ const submitForm = async () => {
       const index = allPosts.value.findIndex(p => p.id === postForm.value.id);
       if (index !== -1) {
         const oldPost = allPosts.value[index];
-        allPosts.value[index] = {
+        const updatedPostData = {
           ...oldPost,
           ...dataToSubmit,
           updateTime: new Date(),
           category: availableCategories.value.find(c => c.id === dataToSubmit.categoryId),
           tags: dataToSubmit.tagIds.map(tid => availableTags.value.find(t => t.id === tid)).filter(t => t) as BlogTag[]
         };
+        allPosts.value[index] = updatedPostData;
       }
       ElMessage.success('文章更新成功 (Mock)！');
     } else { // Add mode
       // const newPost = await apiClient.createPost(dataToSubmit);
       // ElMessage.success('文章发布成功！');
       // Mock add:
-      const newMockPost: BlogPost = {
+      const newMockPostData: BlogPost = {
         ...dataToSubmit,
         id: `post-mock-${Date.now()}`,
         viewCount: 0,
@@ -654,17 +655,16 @@ const submitForm = async () => {
         category: availableCategories.value.find(c => c.id === dataToSubmit.categoryId),
         tags: dataToSubmit.tagIds.map(tid => availableTags.value.find(t => t.id === tid)).filter(t => t) as BlogTag[]
       };
-      allPosts.value.unshift(newMockPost);
+      allPosts.value.unshift(newMockPostData);
       ElMessage.success('文章发布成功 (Mock)！');
     }
     closeDialog();
     await fetchPosts(); // Re-fetch posts to reflect changes and re-apply server-side logic/pagination
   } catch (error) {
-    console.error("Post operation failed:", error);
-    ElMessage.error('操作失败，请重试');
-  } finally {
-    formSubmitting.value = false;
-  }
+    ElMessage.error('操作失败，请重试。');
+   } finally {
+     formSubmitting.value = false;
+   }
 };
 
 const handleDeletePost = (postId: string) => {

@@ -253,36 +253,34 @@ const closeDialog = () => {
 const submitForm = async () => {
   if (!categoryFormRef.value) return;
   formSubmitting.value = true;
-  const valid = await categoryFormRef.value.validate();
-
-  if (!valid) {
-    ElMessage.error('请检查表单输入！');
-    formSubmitting.value = false;
-    return;
-  }
-
-  const dataToSubmit = {
-    name: categoryForm.value.name.trim(),
-    description: categoryForm.value.description.trim(),
-  };
 
   try {
+    const valid = await categoryFormRef.value.validate();
+
+    if (!valid) {
+      ElMessage.error('请检查表单输入！');
+      // formSubmitting will be reset in the finally block
+      return;
+    }
+
+    const dataToSubmit = {
+      name: categoryForm.value.name.trim(),
+      description: categoryForm.value.description.trim(),
+    };
+
     if (categoryForm.value.id) { // Edit mode
       // const updatedCategory = await apiClient.updateCategory(categoryForm.value.id, dataToSubmit);
       // const index = allCategories.value.findIndex(cat => cat.id === updatedCategory.id);
       // if (index !== -1) allCategories.value[index] = updatedCategory; else fetchCategories(); // or update locally
       // ElMessage.success('类型更新成功！');
-
       // Mock update:
       const index = allCategories.value.findIndex(cat => cat.id === categoryForm.value.id);
       if (index !== -1) allCategories.value[index] = { ...allCategories.value[index], ...dataToSubmit };
       ElMessage.success('类型更新成功 (Mock)！');
-
     } else { // Add mode
       // const newCategory = await apiClient.createCategory(dataToSubmit);
       // allCategories.value.unshift(newCategory); // Or re-fetch: fetchCategories();
       // ElMessage.success('类型添加成功！');
-
       // Mock add:
       const newMockCategory: BlogCategory = { ...dataToSubmit, id: `cat-mock-${Date.now()}`, articleCount: 0, createTime: new Date() };
       allCategories.value.unshift(newMockCategory);
@@ -291,8 +289,9 @@ const submitForm = async () => {
     closeDialog();
     // fetchCategories(); // Re-fetch data after add/edit to ensure consistency if not updating locally
   } catch (error) {
-    console.error("Operation failed:", error);
-    ElMessage.error('操作失败，请重试');
+    ElMessage.error('操作失败，请重试。');
+  } finally {
+    formSubmitting.value = false; // Ensure this is always called
   }
 };
 

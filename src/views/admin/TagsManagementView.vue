@@ -242,26 +242,26 @@ const closeDialog = () => {
 const submitForm = async () => {
   if (!tagFormRef.value) return;
   formSubmitting.value = true;
-  const valid = await tagFormRef.value.validate();
-
-  if (!valid) {
-    ElMessage.error('请检查表单输入！');
-    formSubmitting.value = false;
-    return;
-  }
-
-  const dataToSubmit = {
-    name: tagForm.value.name.trim(),
-    description: tagForm.value.description.trim() || undefined, // Send undefined if empty
-  };
 
   try {
+    const valid = await tagFormRef.value.validate();
+
+    if (!valid) {
+      ElMessage.error('请检查表单输入！');
+      // formSubmitting will be reset in the finally block
+      return;
+    }
+
+    const dataToSubmit = {
+      name: tagForm.value.name.trim(),
+      description: tagForm.value.description.trim() || undefined, // Send undefined if empty
+    };
+
     if (tagForm.value.id) { // Edit mode
       // const updatedTag = await apiClient.updateTag(tagForm.value.id, dataToSubmit);
       // const index = allTags.value.findIndex(t => t.id === updatedTag.id);
       // if (index !== -1) allTags.value[index] = updatedTag; else fetchTags();
       // ElMessage.success('标签更新成功！');
-
       const index = allTags.value.findIndex(t => t.id === tagForm.value.id);
       if (index !== -1) allTags.value[index] = { ...allTags.value[index], ...dataToSubmit };
       ElMessage.success('标签更新成功 (Mock)！');
@@ -269,7 +269,6 @@ const submitForm = async () => {
       // const newTag = await apiClient.createTag(dataToSubmit);
       // allTags.value.unshift(newTag); // Or fetchTags();
       // ElMessage.success('标签添加成功！');
-
       const newMockTag: BlogTag = { ...dataToSubmit, id: `tag-mock-${Date.now()}`, articleCount: 0, createTime: new Date() };
       allTags.value.unshift(newMockTag);
       ElMessage.success('标签添加成功 (Mock)！');
@@ -277,11 +276,10 @@ const submitForm = async () => {
     closeDialog();
     // fetchTags(); // Re-fetch after add/edit
   } catch (error) {
-    console.error("Tag operation failed:", error);
-    ElMessage.error('操作失败，请重试');
-  } finally {
-    formSubmitting.value = false;
-  }
++    ElMessage.error('操作失败，请重试。');
+   } finally {
+     formSubmitting.value = false;
+   }
 };
 
 const handleDeleteTag = (tagId: string) => {
