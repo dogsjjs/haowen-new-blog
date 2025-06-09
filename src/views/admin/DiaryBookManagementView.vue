@@ -39,6 +39,24 @@
         </template>
       </el-dialog>
 
+      <!-- 日记内容详情弹窗 -->
+      <el-dialog v-model="detailsDialogVisible" :title="selectedDiaryForDetails?.title || '日记详情'"
+        width="clamp(500px, 70%, 900px)" @close="closeDetailsDialog" draggable class="diary-details-dialog">
+        <div v-if="selectedDiaryForDetails" class="details-content">
+          <div class="diary-meta">
+            <span>创建于: {{ formatDate(selectedDiaryForDetails.createTime) }}</span>
+            <el-tag :type="selectedDiaryForDetails.isPublic ? 'success' : 'info'" size="small"
+              style="margin-left: 15px;">
+              {{ selectedDiaryForDetails.isPublic ? '公开' : '私密' }}
+            </el-tag>
+          </div>
+          <MdPreview :id="previewId" :modelValue="selectedDiaryForDetails.content" :theme="markdownTheme" />
+        </div>
+        <template #footer>
+          <el-button @click="closeDetailsDialog">关闭</el-button>
+        </template>
+      </el-dialog>
+
       <!-- 日记列表 -->
       <el-table :data="paginatedDiaries" style="width: 100%; margin-top: 20px;" v-loading="loading" border stripe>
         <el-table-column prop="id" label="ID (部分)" width="150">
@@ -46,7 +64,11 @@
             {{ scope.row.id.substring(0, 8) }}...
           </template>
         </el-table-column>
-        <el-table-column prop="title" label="日记标题" sortable show-overflow-tooltip />
+        <el-table-column prop="title" label="日记标题" sortable show-overflow-tooltip min-width="150">
+          <template #default="scope">
+            <el-link type="primary" @click="showDiaryDetails(scope.row)">{{ scope.row.title }}</el-link>
+          </template>
+        </el-table-column>
         <el-table-column prop="isPublic" label="是否公开" width="120" sortable align="center">
           <template #default="scope">
             <el-tag :type="scope.row.isPublic ? 'success' : 'info'" size="small">
@@ -91,8 +113,11 @@ import { ref, computed, onMounted, reactive, nextTick } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { Search as SearchIcon, Plus as PlusIcon, Edit as EditIcon, Delete as DeleteIcon } from '@element-plus/icons-vue';
 import { useThemeStore } from '@/stores/theme';
-import { MdEditor, type Themes } from 'md-editor-v3';
+import { marked } from 'marked';
+import { MdEditor, MdPreview, type Themes } from 'md-editor-v3';
 import 'md-editor-v3/lib/style.css';
+
+const previewId = 'md-preview';
 
 interface DiaryEntry {
   id: string;
@@ -114,6 +139,24 @@ const formSubmitting = ref(false);
 const dialogVisible = ref(false);
 const dialogTitle = ref('');
 const diaryFormRef = ref<FormInstance>();
+
+const detailsDialogVisible = ref(false);
+const selectedDiaryForDetails = ref<DiaryEntry | null>(null);
+
+
+const showDiaryDetails = (diary: DiaryEntry) => {
+  selectedDiaryForDetails.value = diary;
+  detailsDialogVisible.value = true;
+};
+
+const closeDetailsDialog = () => {
+  detailsDialogVisible.value = false;
+  selectedDiaryForDetails.value = null;
+};
+
+const showContent = computed(() => {
+  return selectedDiaryForDetails.value ? marked(selectedDiaryForDetails.value.content) : '';
+});
 
 const initialDiaryFormState = (): Omit<DiaryEntry, 'id' | 'createTime' | 'updateTime'> & { id: string | null } => ({
   id: null,
@@ -394,5 +437,31 @@ const formatDate = (date: Date | string): string => {
   align-items: center;
   font-size: 18px;
   font-weight: 500;
+}
+
+// Styles for Diary Details Dialog (inspired by DiaryBookView.vue)
+.diary-details-dialog {
+  .el-dialog__body {
+    padding-top: 10px; // Adjust padding as needed
+    padding-bottom: 20px;
+  }
+
+  .details-content {
+    .diary-meta {
+      margin-bottom: 15px;
+      font-size: 0.9em;
+      color: var(--el-text-color-secondary);
+      display: flex;
+      align-items: center;
+    }
+
+    // md-editor in previewOnly mode might need some specific styling if default is not enough
+    // For example, to ensure it fits well within the dialog
+    .md-editor-previewOnly {
+      // background-color: var(--el-fill-color-lighter); // Example: slightly different background for preview
+      // border-radius: 4px;
+      // padding: 15px;
+    }
+  }
 }
 </style>

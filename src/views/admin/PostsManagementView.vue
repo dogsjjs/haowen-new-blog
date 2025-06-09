@@ -120,6 +120,29 @@
         </template>
       </el-dialog>
 
+
+      <!-- 文章内容详情弹窗 -->
+      <el-dialog v-model="postDetailsDialogVisible" :title="selectedPostForDetails?.title || '文章详情'"
+        width="clamp(600px, 80%, 1000px)" @close="closePostDetailsDialog" draggable class="post-details-dialog">
+        <div v-if="selectedPostForDetails" class="details-content">
+          <div class="post-meta">
+            <span v-if="selectedPostForDetails.category">类型: <el-tag size="small">{{ selectedPostForDetails.category.name
+            }}</el-tag></span>
+            <span v-if="selectedPostForDetails.tags && selectedPostForDetails.tags.length > 0" style="margin-left: 15px;">
+              标签:
+              <el-tag v-for="tag in selectedPostForDetails.tags" :key="tag.id" size="small" style="margin-right: 5px;">{{
+                tag.name }}</el-tag>
+            </span>
+            <span style="margin-left: 15px;">创建于: {{ formatDate(selectedPostForDetails.createTime) }}</span>
+          </div>
+          <MdPreview :id="previewIdForPost" :modelValue="selectedPostForDetails.content" :theme="markdowkTheme"
+            style="max-height: 60vh; overflow-y: auto; border: 1px solid var(--el-border-color-lighter); border-radius: 4px; padding:15px; margin-top:15px;" />
+        </div>
+        <template #footer>
+          <el-button @click="closePostDetailsDialog">关闭</el-button>
+        </template>
+      </el-dialog>
+
       <!-- 文章列表 -->
       <el-table :data="paginatedPosts" style="width: 100%; margin-top: 20px;" v-loading="loading" border stripe>
         <el-table-column label="首图" width="100" align="center">
@@ -136,7 +159,11 @@
             </el-image>
           </template>
         </el-table-column>
-        <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip sortable />
+        <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip sortable>
+          <template #default="scope">
+            <el-link type="primary" @click="showPostDetails(scope.row)">{{ scope.row.title }}</el-link>
+          </template>
+        </el-table-column>
         <el-table-column label="类型" width="120" sortable="custom" :sort-by="(row: BlogPost) => row.category?.name">
           <template #default="scope">
             <el-tag type="success" size="small" v-if="scope.row.category">{{ scope.row.category.name }}</el-tag>
@@ -219,7 +246,7 @@ import { ref, computed, onMounted, reactive, nextTick, watch } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type UploadProps, type UploadRawFile } from 'element-plus';
 import { Search as SearchIcon, Plus as PlusIcon, Edit as EditIcon, Delete as DeleteIcon, Picture as PictureIcon } from '@element-plus/icons-vue';
 import { useThemeStore } from '@/stores/theme'; // 导入 theme store
-import { MdEditor, type Themes } from 'md-editor-v3';
+import { MdEditor, MdPreview, type Themes } from 'md-editor-v3';
 import 'md-editor-v3/lib/style.css';
 
 // --- Interfaces ---
@@ -278,6 +305,21 @@ const selectOptionsLoading = ref(false); // For loading categories/tags in form
 const dialogVisible = ref(false);
 const dialogTitle = ref('');
 const postFormRef = ref<FormInstance>();
+
+const postDetailsDialogVisible = ref(false);
+const selectedPostForDetails = ref<BlogPost | null>(null);
+const previewIdForPost = 'md-preview-post'; // Unique ID for post preview
+
+
+const showPostDetails = (post: BlogPost) => {
+  selectedPostForDetails.value = post;
+  postDetailsDialogVisible.value = true;
+};
+
+const closePostDetailsDialog = () => {
+  postDetailsDialogVisible.value = false;
+  selectedPostForDetails.value = null;
+};
 
 const initialPostFormState = (): Omit<BlogPost, 'id' | 'category' | 'tags' | 'viewCount' | 'createTime' | 'updateTime'> & { id: string | null } => ({
   id: null,
@@ -716,7 +758,7 @@ const formatDate = (date: Date | string): string => {
 
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .posts-management {
   padding: 20px;
 }
@@ -797,5 +839,29 @@ const formatDate = (date: Date | string): string => {
   font-size: 12px;
   color: #909399;
   margin-top: 7px;
+}
+
+
+.post-details-dialog {
+  .el-dialog__body {
+    padding-top: 10px;
+    padding-bottom: 20px;
+  }
+
+  .details-content {
+    .post-meta {
+      margin-bottom: 10px; // Reduced margin for post meta
+      font-size: 0.9em;
+      color: var(--el-text-color-secondary);
+      display: flex;
+      flex-wrap: wrap; // Allow meta items to wrap
+      align-items: center;
+      gap: 5px 15px; // Row and column gap
+
+      .el-tag {
+        margin-left: 5px; // Space between label and tag
+      }
+    }
+  }
 }
 </style>
