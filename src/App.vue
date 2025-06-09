@@ -40,9 +40,22 @@ const currentLayout = computed(() => {
 </script>
 
 <template>
-  <!-- <el-config-provider :locale="locale"> -->
-    <component :is="currentLayout">
-      <RouterView />
-    </component>
-  <!-- </el-config-provider> -->
+  <component :is="currentLayout">
+    <router-view v-slot="{ Component, route }">
+      <transition name="fade" mode="out-in">
+        <component :is="Component" :key="route.path" />
+      </transition>
+    </router-view>
+  </component>
 </template>
+
+<style>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
