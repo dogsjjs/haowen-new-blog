@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from "vue-router";
+import { createRouter, createWebHashHistory } from "vue-router";
 import type { RouteRecordRaw } from "vue-router";
 
 import HomeView from "../views/HomeView.vue";
@@ -152,7 +152,7 @@ const routes: Array<RouteRecordRaw> = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHashHistory(import.meta.env.VITE_APP_BASE_URL),
   routes,
 });
 
@@ -196,7 +196,7 @@ router.beforeEach((to, from, next) => {
 router.afterEach((to) => {
   // 根据路由名动态设置文档的标题
   if (to.meta && to.meta.title) {
-    document.title = to.meta.title as string;
+    document.title = import.meta.env.VITE_APP_TITLE + to.meta.title as string;
   }
 });
 
