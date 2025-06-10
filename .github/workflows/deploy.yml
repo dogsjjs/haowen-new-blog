@@ -29,7 +29,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18' # 指定 Node.js 版本，根据您的项目需求调整
-          cache: 'pnpm' # 或 'yarn'
+          cache: 'npm' # 或 'yarn'
+
+      - name: Install pnpm
+        run: npm install -g pnpm
 
       - name: Install dependencies
         run: pnpm install # 或者 yarn install
