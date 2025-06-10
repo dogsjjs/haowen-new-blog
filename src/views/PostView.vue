@@ -37,6 +37,7 @@
 import { ref, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router'; // 用于从路由获取参数
 import { getPostById, type PostDetail } from '@/data/blogPost'; // 导入数据获取函数和类型
+import { getAllPosts } from '@/api/post'
 
 const post = ref<PostDetail | null>(null);
 const route = useRoute();
@@ -54,6 +55,7 @@ const fetchPostData = async (postId: string) => {
 };
 
 onMounted(() => {
+  getAllPosts()
   const postIdFromRoute = route.params.id as string; // 假设你的路由参数是 /post/:id
   if (postIdFromRoute) {
     fetchPostData(postIdFromRoute);
@@ -155,7 +157,7 @@ watch(
       .meta-label {
         font-weight: 500;
         // Inherit color from hero-content-overlay for better readability on dark backgrounds
-        color: inherit; 
+        color: inherit;
         opacity: 0.85; // Slightly less prominent than main hero text
         margin-right: 5px;
       }
@@ -184,6 +186,7 @@ watch(
           // color: var(--category-tag-hover-text-color); // If text color changes on hover
         }
       }
+
       // If category-tag and post-tag need distinct styling based on different variables:
       // .category-tag {}
       // .post-tag {}
