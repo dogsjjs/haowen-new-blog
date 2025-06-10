@@ -30,12 +30,16 @@ async function enableMocking() {
   }
 }
 
-// 在应用其他部分初始化之前启用 Mocking
-await enableMocking();
+async function initializeApp() {
+  // 在应用其他部分初始化之前启用 Mocking
+  await enableMocking();
 
-const app = createApp(App)
+  const app = createApp(App)
 
 app.use(createPinia())
 app.use(router)
 
 app.mount('#app')
+}
+
+initializeApp();
