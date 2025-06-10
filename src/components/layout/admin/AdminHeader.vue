@@ -38,7 +38,7 @@ const handleLogout = () => {
 
 
 const goToHome = () => {
-  router.push('/');
+  router.push('/admin');
 };
 
 </script>

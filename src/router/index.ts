@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
 import type { RouteRecordRaw } from "vue-router";
-import NProgress from "nprogress";
 
 import HomeView from "../views/HomeView.vue";
 import NotFoundView from "@/views/error/NotFoundView.vue";
@@ -178,7 +177,6 @@ const authService = {
 
 // 全局前置守卫
 router.beforeEach((to, from, next) => {
-  NProgress.start();
   const isLoggedIn = authService.isLoggedIn();
 
   if (to.meta.requiresAuth && !isLoggedIn) {
@@ -192,12 +190,10 @@ router.beforeEach((to, from, next) => {
   } else {
     // 其他情况，正常放行
     next();
-    NProgress.done();
   }
 });
 
 router.afterEach((to) => {
-  NProgress.done();
   // 根据路由名动态设置文档的标题
   if (to.meta && to.meta.title) {
     document.title = to.meta.title as string;

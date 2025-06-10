@@ -16,13 +16,33 @@
         </el-card>
       </el-col>
     </el-row>
+
+    <!-- 浏览量趋势图 -->
+    <el-row :gutter="20" style="margin-top: 20px;">
+      <el-col :span="24">
+        <el-card shadow="hover" class="chart-card">
+          <div class="chart-container">
+            <Line v-if="chartData.datasets.length" :data="chartData" :options="chartOptions" />
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
 <script lang='ts' setup>
 import { ref, onMounted, computed } from 'vue'
 import { Document, CollectionTag, Edit, View, Notebook } from '@element-plus/icons-vue'
-import { useThemeStore } from '@/stores/theme'
+// Chart.js imports
+import {
+  Chart as ChartJS,
+  Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement, Filler
+} from 'chart.js'
+import { Line } from 'vue-chartjs'
+
+// Register Chart.js components
+ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement, Filler)
+
 
 // 随机生成统计数据
 const stats = [
@@ -57,12 +77,101 @@ const stats = [
     bg: 'var(--el-color-danger-light-9)'
   }
 ]
+const chartData = ref<{ labels: string[]; datasets: any[] }>({
+  labels: [],
+  datasets: []
+})
+
+const chartOptions = ref({
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: false
+    },
+    title: {
+      display: true,
+      text: '网站浏览量趋势',
+      color: 'var(--el-text-color-primary)', // Default, will be updated
+      font: {
+        size: 16
+      }
+    }
+  },
+  scales: {
+    x: {
+      grid: {
+        color: 'var(--el-border-color-lighter)' // Default, will be updated
+      },
+      ticks: {
+        color: 'var(--el-text-color-secondary)' // Default, will be updated
+      }
+    },
+    y: {
+      beginAtZero: true,
+      grid: {
+        color: 'var(--el-border-color-lighter)' // Default, will be updated
+      },
+      ticks: {
+        color: 'var(--el-text-color-secondary)' // Default, will be updated
+      }
+    }
+  }
+})
+
+const generateRandomChartData = () => {
+  const labels = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+  const data = labels.map(() => Math.floor(Math.random() * 800) + 100)
+  return { labels, data }
+}
+
+onMounted(() => {
+  const generatedData = generateRandomChartData()
+
+  // Dynamically get CSS variable values for theme consistency
+  const style = getComputedStyle(document.documentElement)
+  const primaryColor = style.getPropertyValue('--el-color-primary').trim()
+  const primaryColorLight9 = style.getPropertyValue('--el-color-primary-light-9').trim()
+  const textColorPrimary = style.getPropertyValue('--el-text-color-primary').trim()
+  const textColorSecondary = style.getPropertyValue('--el-text-color-secondary').trim()
+  const borderColorLighter = style.getPropertyValue('--el-border-color-lighter').trim()
+  const bgColorOverlay = style.getPropertyValue('--el-bg-color-overlay').trim() || '#ffffff'
+
+  chartData.value = {
+    labels: generatedData.labels,
+    datasets: [
+      {
+        label: '浏览量',
+        backgroundColor: primaryColorLight9, // Area fill color
+        borderColor: primaryColor,
+        data: generatedData.data,
+        fill: false,
+        tension: 0.3, // For a smooth line
+        pointRadius: 3,
+        pointBackgroundColor: primaryColor
+      }
+    ]
+  }
+
+  // Update chart options with theme colors
+  chartOptions.value.plugins.title.color = textColorPrimary
+  chartOptions.value.plugins.tooltip = { // Add tooltip styling
+    backgroundColor: bgColorOverlay,
+    titleColor: textColorPrimary,
+    bodyColor: textColorSecondary,
+    borderColor: borderColorLighter,
+    borderWidth: 1
+  }
+  chartOptions.value.scales.x.grid.color = borderColorLighter
+  chartOptions.value.scales.x.ticks.color = textColorSecondary
+  chartOptions.value.scales.y.grid.color = borderColorLighter
+  chartOptions.value.scales.y.ticks.color = textColorSecondary
+})
 </script>
 
 <style scoped lang="scss">
-
 .dashboard {
-  padding: 20px 16px;
+  padding: 16px;
 
   .stat-card {
     display: flex;
@@ -71,7 +180,7 @@ const stats = [
     margin-bottom: 18px;
     background: var(--el-bg-color);
     border: none;
-    transition: background 0.3s;
+
     .stat-icon {
       width: 48px;
       height: 48px;
@@ -80,14 +189,15 @@ const stats = [
       align-items: center;
       justify-content: center;
       margin-right: 18px;
-      transition: background 0.3s;
     }
+
     .stat-info {
       .stat-value {
         font-size: 2rem;
         font-weight: bold;
         color: var(--el-text-color-primary);
       }
+
       .stat-label {
         font-size: 1rem;
         color: var(--el-text-color-secondary);
@@ -97,10 +207,12 @@ const stats = [
   }
 
   .chart-card {
+    margin-top: 10px;
     background: var(--el-bg-color);
+
     .chart-container {
       width: 100%;
-      min-height: 100px;
+      min-height: 350px;
       display: flex;
       align-items: center;
       justify-content: center;
