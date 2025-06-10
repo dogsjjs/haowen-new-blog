@@ -17,7 +17,7 @@ async function enableMocking() {
   // 对于 Vite 项目, 可以使用 import.meta.env.VITE_ENABLE_MOCKS
   // 对于 Create React App, 可以使用 process.env.REACT_APP_ENABLE_MOCKS
   // 请根据你的项目构建工具和环境变量设置调整此判断条件。
-  if (process.env.NODE_ENV === 'development' || import.meta.env.VITE_ENABLE_MOCKS === 'true') {
+  if (import.meta.env.VITE_ENABLE_MOCKS === 'true') {
     const { worker } = await import('./mocks/browser');
     // `worker.start()` 返回一个 Promise，
     // 当 Service Worker 准备好拦截请求时，该 Promise 会 resolve。
