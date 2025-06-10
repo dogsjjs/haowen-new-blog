@@ -96,6 +96,13 @@ const chartOptions = ref({
       font: {
         size: 16
       }
+    },
+    tooltip: { // Add tooltip styling
+      backgroundColor: 'var(--el-bg-color-overlay)',
+      titleColor: 'var(--el-text-color-primary)',
+      bodyColor: 'var(--el-text-color-secondary',
+      borderColor: 'var(--el-border-color-lighter)',
+      borderWidth: 1
     }
   },
   scales: {
