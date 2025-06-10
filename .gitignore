@@ -29,5 +29,6 @@ coverage
 
 *.tsbuildinfo
 
-auto-import.d.ts
-components.d.ts
+auto-import.*
+components.*
+bundle-report.html

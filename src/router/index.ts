@@ -2,8 +2,6 @@ import { createRouter, createWebHashHistory } from "vue-router";
 import type { RouteRecordRaw } from "vue-router";
 
 import HomeView from "../views/HomeView.vue";
-import NotFoundView from "@/views/error/NotFoundView.vue";
-import LoginView from "@/views/admin/LoginView.vue";
 
 import AdminLayout from "@/layouts/AdminLayout.vue";
 
@@ -65,7 +63,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: "/login",
     name: "login",
-    component: LoginView,
+    component: () => import("@/views/admin/LoginView.vue"),
     meta: { title: '登录', guest: true }, // 可选：如果已登录，访问登录页时可以重定向到后台
   },
   // 后台管理路由
@@ -148,7 +146,7 @@ const routes: Array<RouteRecordRaw> = [
       // },
     ],
   },
-  { path: "/:pathMatch(.*)*", name: "NotFound", component: NotFoundView, meta: { title: "404" } }, // 捕获所有未匹配的路由
+  { path: "/:pathMatch(.*)*", name: "NotFound", component: () => import("@/views/error/NotFoundView.vue"), meta: { title: "404" } }, // 捕获所有未匹配的路由
 ];
 
 const router = createRouter({
