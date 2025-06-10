@@ -1,0 +1,53 @@
+# .github/workflows/deploy.yml
+
+name: Deploy to GitHub Pages
+
+# 触发条件：在 push 到 main 分支时触发
+on:
+  push:
+    branches:
+      - main # 或者 master，根据您的主分支名称
+
+# 权限设置，允许此 workflow 向 gh-pages 分支写入
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest # 使用最新的 ubuntu runner
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }} # 输出部署后的 URL
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4 # 检出代码
+
+      - name: Set up Node.js 
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18' # 指定 Node.js 版本，根据您的项目需求调整
+          cache: 'pnpm' # 或 'yarn'
+
+      - name: Install dependencies
+        run: pnpm install # 或者 yarn install
+
+      - name: Build project
+        # 确保这里的 <REPO_NAME> 与 vite.config.ts 中的一致
+        run: pnpm run build # 如果 vite.config.ts 中的 base 没有使用 process.env，则需要在这里设置环境变量
+        # 例如: VITE_APP_BASE_URL=/<REPO_NAME>/ pnpm run build
+        # 但由于我们在 vite.config.ts 中已经处理了 process.env.NODE_ENV，通常直接 pnpm run build 即可
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact 
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist' # 指定构建输出的文件夹
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

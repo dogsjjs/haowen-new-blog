@@ -19,6 +19,8 @@ export default defineConfig({
       resolvers: [ElementPlusResolver()],
     }),
   ],
+  // GitHub 仓库名称
+  base: process.env.NODE_ENV === 'production' ? '/haowen-new-blog/' : '/',
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
