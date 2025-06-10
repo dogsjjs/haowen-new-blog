@@ -28,7 +28,7 @@ jobs:
       - name: Set up Node.js 
         uses: actions/setup-node@v4
         with:
-          node-version: '18' # 指定 Node.js 版本，根据您的项目需求调整
+          node-version: '22' # 指定 Node.js 版本，根据您的项目需求调整
 
       - name: Install pnpm
         run: npm install -g pnpm
