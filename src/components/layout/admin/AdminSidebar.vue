@@ -75,7 +75,7 @@ const sidebarMenuItems = computed(() => {
 .admin-sidebar li a.router-link-exact-active {
   background-color: var(--primary-color-light, #e9f5ff);
   /* 假设的主题浅色变量 */
-  color: var(--primary-color);
+  color: #eee;
   /* 使用全局主题色变量 */
 }
 </style>

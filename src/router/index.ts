@@ -55,10 +55,16 @@ const routes: Array<RouteRecordRaw> = [
     meta: { title: "日记", showInMenu: true, menuIndex: "4" },
   },
   {
+    path: "/photo",
+    name: "photo",
+    component: () => import("@/views/PhotoView.vue"),
+    meta: { title: "相册", showInMenu: true, menuIndex: "5" },
+  },
+  {
     path: "/recommendations",
     name: "personalRecommendations",
     component: () => import("@/views/RecommendationsView.vue"),
-    meta: { title: "推荐", showInMenu: true, menuIndex: "5" },
+    meta: { title: "推荐", showInMenu: true, menuIndex: "6" },
   },
   {
     path: "/login",
@@ -124,6 +130,17 @@ const routes: Array<RouteRecordRaw> = [
           showInSidebar: true,
           title: "日记管理",
           icon: "mdi:notebook-edit-outline",
+        },
+      },
+      {
+        path: "photo",
+        name: "admin-photo",
+        component: () => import("@/views/admin/PhotoManagementView.vue"),
+        meta: {
+          layout: AdminLayout,
+          showInSidebar: true,
+          title: "相册管理",
+          icon: "mdi:photo-library",
         },
       },
       {
