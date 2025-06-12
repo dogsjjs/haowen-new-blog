@@ -23,23 +23,7 @@
 import { ref, reactive } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import type { FormInstance, FormRules } from 'element-plus';
-
-// 模拟认证服务
-const authService = {
-  login: async (user: string, pass: string): Promise<boolean> => {
-    // 实际应用中会调用API
-    return new Promise(resolve => {
-      setTimeout(() => {
-        if (user === 'admin' && pass === 'password') {
-          localStorage.setItem('isAuthenticated', 'true'); // 模拟登录成功
-          resolve(true);
-        } else {
-          resolve(false);
-        }
-      }, 500);
-    });
-  }
-};
+import { login } from '@/api/user';
 
 const loginFormRef = ref<FormInstance>();
 const loginForm = reactive({
@@ -71,7 +55,9 @@ const handleLogin = async () => {
     await loginFormRef.value.validate();
 
     // 如果代码执行到这里，说明表单验证成功
-    const success = await authService.login(loginForm.username, loginForm.password);
+    const success = await login({ username: loginForm.username, password: loginForm.password });
+    console.log('Login success:', success);
+
     if (success) {
       const redirectPath = route.query.redirect as string | undefined;
       if (redirectPath) {
@@ -126,7 +112,8 @@ const handleLogin = async () => {
   padding: 30px 40px;
   background-color: var(--acrylic-bg-current);
   backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%); /* Safari */
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  /* Safari */
   border-bottom: 1px solid var(--acrylic-border-current);
   box-shadow: 0 2px 12px 0 var(--acrylic-shadow-current);
 

@@ -1,3 +1,5 @@
+import { getToken } from "./auth";
+
 interface RequestOptions extends RequestInit {
   data?: Record<string, any>; // For POST, PUT, PATCH requests
   params?: Record<string, any>; // For GET request query parameters
@@ -13,20 +15,13 @@ export interface ApiResponse<T = any> {
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'; // 从环境变量或默认值获取API基础路径
 
 /**
- * 获取存储的认证 Token
- * @returns {string | null} Token 或 null
- */
-function getToken(): string | null {
-  return localStorage.getItem('authToken'); // 假设 token 存储在 localStorage
-}
-
-/**
  * 通用请求函数
  * @param {string} url 请求的相对路径
  * @param {RequestOptions} options fetch API 的配置项，增加了 data 属性
  * @returns {Promise<ApiResponse<T>>} 包含后端响应的 Promise
  */
 async function request<T = any>(url: string, options: RequestOptions = {}): Promise<ApiResponse<T>> {
+  // 获取token
   const token = getToken();
   const headers = new Headers(options.headers || {});
 

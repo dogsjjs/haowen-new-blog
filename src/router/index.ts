@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory } from "vue-router";
 import type { RouteRecordRaw } from "vue-router";
+import { getToken } from "@/utils/auth";
 
 import HomeView from "../views/HomeView.vue";
 
@@ -171,28 +172,10 @@ const router = createRouter({
   routes,
 });
 
-// 模拟一个简单的认证服务
-const authService = {
-  isLoggedIn: (): boolean => {
-    // 在实际应用中，这里会检查 token、session 或 Vuex/Pinia store
-    // 例如: return !!localStorage.getItem('user-token');
-    // 为了演示，我们暂时返回 false，表示未登录
-    // 您可以修改这里来测试登录和未登录的情况
-    return !!localStorage.getItem("isAuthenticated"); // 示例：使用localStorage
-  },
-  login: () => {
-    // 模拟登录
-    localStorage.setItem("isAuthenticated", "true");
-  },
-  logout: () => {
-    // 模拟登出
-    localStorage.removeItem("isAuthenticated");
-  },
-};
-
 // 全局前置守卫
 router.beforeEach((to, from, next) => {
-  const isLoggedIn = authService.isLoggedIn();
+  const token = getToken()
+  const isLoggedIn = !!token;
 
   if (to.meta.requiresAuth && !isLoggedIn) {
     // 如果目标路由需要认证但用户未登录

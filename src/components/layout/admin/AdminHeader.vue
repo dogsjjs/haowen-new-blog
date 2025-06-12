@@ -7,7 +7,7 @@
       <el-tooltip :content="themeStore.isDark ? '切换到亮色模式' : '切换到暗色模式'" placement="bottom">
         <el-button :icon="themeStore.isDark ? SunnyIcon : MoonIcon" circle @click="themeStore.toggleDark()" />
       </el-tooltip>
-      <button v-if="isLoggedIn" @click="handleLogout" class="logout-button">登出</button>
+      <button v-if="isLoggedIn()" @click="handleLogout" class="logout-button">登出</button>
     </div>
   </el-header>
 </template>
@@ -15,25 +15,14 @@
 import { useRouter } from 'vue-router';
 import { Sunny as SunnyIcon, Moon as MoonIcon } from '@element-plus/icons-vue';
 import { useThemeStore } from '@/stores/theme'; // 导入 theme store
+import { isLoggedIn, clearToken } from '@/utils/auth';
 
 const themeStore = useThemeStore(); // 使用 store
 const router = useRouter();
 
-// 模拟认证服务 (与 router/index.ts 中的保持一致或从共享模块导入)
-const authService = {
-  isLoggedIn: (): boolean => {
-    return !!localStorage.getItem('isAuthenticated');
-  },
-  logout: () => {
-    localStorage.removeItem('isAuthenticated');
-  }
-};
-
-const isLoggedIn = authService.isLoggedIn();
-
 const handleLogout = () => {
-  authService.logout();
-  goToHome();
+  clearToken();
+  router.push('/login');
 };
 
 
