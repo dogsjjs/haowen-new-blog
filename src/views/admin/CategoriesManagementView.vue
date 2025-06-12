@@ -24,6 +24,9 @@
           <el-form-item label="类型名称" prop="name">
             <el-input v-model="categoryForm.name" placeholder="请输入类型名称" />
           </el-form-item>
+          <el-form-item label="类型图标" prop="icon">
+            <el-input v-model="categoryForm.icon" placeholder="请输入图标名称/类名 (可选)" />
+          </el-form-item>
           <el-form-item label="类型描述" prop="description">
             <el-input v-model="categoryForm.description" type="textarea" placeholder="请输入类型描述" :rows="3" />
           </el-form-item>
@@ -39,6 +42,12 @@
         <el-table-column prop="id" label="ID (部分)" width="150">
           <template #default="scope">
             {{ scope.row.id.substring(0, 8) }}...
+          </template>
+        </el-table-column>
+        <el-table-column label="图标" width="80" align="center">
+          <template #default="scope">
+            <!-- 假设 icon 是 Element Plus 图标组件的名称或一个 CSS 类名 -->
+            <span v-if="scope.row.icon"><Icon :icon="scope.row.icon" /></span>
           </template>
         </el-table-column>
         <el-table-column prop="name" label="类型名称" sortable />
@@ -83,6 +92,7 @@
 <script lang='ts' setup>
 import { ref, computed, onMounted, reactive, nextTick } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
+import { Icon } from '@iconify/vue';
 import { Search as SearchIcon, Plus as PlusIcon, Edit as EditIcon, Delete as DeleteIcon } from '@element-plus/icons-vue';
 //  --- 类型定义导入 ---
 import type { ICategory, CreateCategoryDTO, QueryCategoryDTO, CategoryResult, UpdateCategoryDTO } from '@/types/category.type';
@@ -105,16 +115,34 @@ const categoryFormRef = ref<FormInstance>(); // 表单实例的引用，用于�
 const categoryForm = ref<{ // 表单数据模型
   id: string | null;
   name: string;
+  icon: string;
   description: string;
 }>({
   id: null,
   name: '',
+  icon: '',
   description: '',
 });
+
+// 自定义图标校验器
+const validateIcon = (rule: any, value: any, callback: any) => {
+  if (value && value.trim() === '') {
+    callback(new Error('图标名称不能仅包含空格'));
+  } else if (value && value.length > 50) { // 示例：限制长度为50
+    callback(new Error('图标名称过长，最多50个字符'));
+  } else {
+    callback();
+  }
+};
 
 const categoryFormRules = reactive<FormRules>({ // 表单校验规则
   name: [{ required: true, message: '类型名称不能为空', trigger: 'blur' }],
   description: [{ required: true, message: '请输入描述', trigger: 'blur' }],
+  icon: [
+    // 可选字段，但如果填写，可以有一些基本校验
+    // 例如，不允许纯空格，或者限制长度
+    { validator: validateIcon, trigger: 'blur' }
+  ],
 });
 
 // --- API 客户端封装 ---
@@ -196,7 +224,7 @@ const totalPages = computed(() => Math.ceil(totalCategories.value / pageSize.val
 const openAddDialog = () => {
   dialogTitle.value = '添加新类型';
   // 重置表单数据
-  categoryForm.value = { id: null, name: '', description: '' };
+  categoryForm.value = { id: null, name: '', icon: '', description: '' };
   dialogVisible.value = true;
   // DOM 更新后清除表单校验状态
   nextTick(() => {
@@ -208,7 +236,7 @@ const openAddDialog = () => {
 const openEditDialog = (category: ICategory) => {
   dialogTitle.value = '编辑类型';
   // 用选中的分类数据填充表单
-  categoryForm.value = { id: category.id as string, name: category.name, description: category.description as string };
+  categoryForm.value = { id: category.id as string, name: category.name, icon: category.icon || '', description: category.description || '' };
   dialogVisible.value = true;
   // DOM 更新后清除表单校验状态
   nextTick(() => {
@@ -238,6 +266,7 @@ const submitForm = async () => {
 
     const dataToSubmit = { // 准备提交的数据
       name: categoryForm.value.name.trim(),
+      icon: categoryForm.value.icon.trim(),
       description: categoryForm.value.description.trim(),
     };
 
@@ -308,6 +337,7 @@ const handleCurrentPageChange = (val: number) => {
   currentPage.value = val;
   // 注意：由于是客户端分页，此处不需要重新调用 fetchCategories
 };
+
 
 </script>
 
