@@ -24,7 +24,7 @@
 import { ref, reactive } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import type { FormInstance, FormRules } from 'element-plus';
-import { login } from '@/api/user';
+import { login } from '@/api/user.api';
 
 const loginFormRef = ref<FormInstance>();
 const loginForm = reactive({

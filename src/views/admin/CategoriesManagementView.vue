@@ -87,7 +87,7 @@ import { Search as SearchIcon, Plus as PlusIcon, Edit as EditIcon, Delete as Del
 //  --- 类型定义导入 ---
 import type { ICategory, CreateCategoryDTO, QueryCategoryDTO, CategoryResult, UpdateCategoryDTO } from '@/types/category.type';
 // --- API 函数导入 ---
-import { getAllCategories, addCategory, updateCategory, deleteCategory } from '@/api/category';
+import { getAllCategories, addCategory, updateCategory, deleteCategory } from '@/api/category.api';
 // --- 工具函数导入 ---
 import { formatDate } from '@/utils/commonUtils';
 
