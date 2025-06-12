@@ -1,4 +1,4 @@
-import http from '@/utils/request'; // 假设 @ 指向 src 目录
+import http from '@/utils/request';
 
 // 定义一些模拟数据类型 (可选，但推荐)
 interface Post {

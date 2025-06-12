@@ -7,7 +7,8 @@
         <el-input v-model="loginForm.username" placeholder="请输入用户名" clearable />
       </el-form-item>
       <el-form-item label="密码" prop="password">
-        <el-input type="password" v-model="loginForm.password" placeholder="请输入密码" show-password clearable />
+        <el-input type="password" v-model="loginForm.password" placeholder="请输入密码" @keyup.enter="handleLogin"
+          show-password clearable />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="handleLogin" class="login-button" :loading="loading">
