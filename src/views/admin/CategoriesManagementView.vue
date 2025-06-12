@@ -47,10 +47,15 @@
             {{ scope.row.description || '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="articleCount" label="文章数量" width="120" sortable align="center" />
-        <el-table-column prop="createTime" label="创建时间" width="180" sortable>
+        <el-table-column prop="postCount" label="文章数量" width="120" sortable align="center" />
+        <el-table-column prop="createdAt" label="创建时间" width="180" sortable>
           <template #default="scope">
-            {{ formatDate(scope.row.createTime) }}
+            {{ formatDate(scope.row.createdAt) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="updatedAt" label="更新时间" width="180" sortable>
+          <template #default="scope">
+            {{ formatDate(scope.row.updatedAt) }}
           </template>
         </el-table-column>
         <el-table-column label="操作" width="180" fixed="right" align="center">
@@ -79,27 +84,25 @@
 import { ref, computed, onMounted, reactive, nextTick } from 'vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { Search as SearchIcon, Plus as PlusIcon, Edit as EditIcon, Delete as DeleteIcon } from '@element-plus/icons-vue';
-
-interface BlogCategory {
-  id: string;
-  name: string;
-  description: string;
-  articleCount: number;
-  createTime: Date;
-}
+//  --- 类型定义导入 ---
+import type { ICategory, CreateCategoryDTO, QueryCategoryDTO, CategoryResult, UpdateCategoryDTO } from '@/types/category.type';
+// --- API 函数导入 ---
+import { getAllCategories, addCategory, updateCategory, deleteCategory } from '@/api/category';
+// --- 工具函数导入 ---
+import { formatDate } from '@/utils/commonUtils';
 
 // --- 响应式状态 ---
-const allCategories = ref<BlogCategory[]>([]);
+const allCategories = ref<ICategory[]>([]);
 const searchQuery = ref('');
 const currentPage = ref(1);
 const pageSize = ref(10);
 const loading = ref(false);
-const formSubmitting = ref(false);
+const formSubmitting = ref(false); // 表单提交状态，用于按钮loading
 
-const dialogVisible = ref(false);
-const dialogTitle = ref('');
-const categoryFormRef = ref<FormInstance>();
-const categoryForm = ref<{
+const dialogVisible = ref(false); // 控制添加/编辑弹窗的显示
+const dialogTitle = ref(''); // 弹窗标题 (添加/编辑)
+const categoryFormRef = ref<FormInstance>(); // 表单实例的引用，用于校验、重置等
+const categoryForm = ref<{ // 表单数据模型
   id: string | null;
   name: string;
   description: string;
@@ -109,103 +112,67 @@ const categoryForm = ref<{
   description: '',
 });
 
-const categoryFormRules = reactive<FormRules>({
+const categoryFormRules = reactive<FormRules>({ // 表单校验规则
   name: [{ required: true, message: '类型名称不能为空', trigger: 'blur' }],
-  // description: [{ required: false, message: '请输入描述', trigger: 'blur' }], // 描述可以为空
+  description: [{ required: true, message: '请输入描述', trigger: 'blur' }],
 });
 
-// --- API Service Placeholders ---
+// --- API 客户端封装 ---
+// 此处 apiClient 对象封装了对 API 导入函数的调用，
+// 使得组件内部调用 API 的方式更统一，方便未来可能的统一处理（如错误上报、日志等）。
 const apiClient = {
-  async getCategories(params: { page: number, pageSize: number, query?: string }): Promise<{ data: BlogCategory[], total: number }> {
-    console.log('API CALL: getCategories with params', params);
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    // Simulate filtering and pagination on the mock data for now
-    let items = allCategories.value;
-    if (params.query) {
-      const lowerQuery = params.query.toLowerCase();
-      items = items.filter(cat => cat.name.toLowerCase().includes(lowerQuery));
-    }
-    // In a real API, the backend would handle pagination and filtering.
-    // For this placeholder, we'll just return the locally filtered/paginated data.
-    // This part will be simpler when the backend handles it.
-    const total = items.length;
-    // const start = (params.page - 1) * params.pageSize;
-    // const end = start + params.pageSize;
-    // return { data: items.slice(start, end), total };
-    // For now, let's assume the mock data is the full dataset and we re-fetch it.
-    return { data: generateMockData(35, params.query), total: 35 }; // Simplified for mock
+  // 获取分类列表 (带分页和查询参数)
+  async getCategories(params: QueryCategoryDTO): Promise<CategoryResult | null> {
+    const response = await getAllCategories(params);
+    return response;
   },
-  async createCategory(data: { name: string, description: string }): Promise<BlogCategory> {
+  // 创建新分类
+  async createCategory(data: CreateCategoryDTO): Promise<ICategory> {
     console.log('API CALL: createCategory with data', data);
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const newCategory: BlogCategory = { ...data, id: `cat-api-${Date.now()}`, articleCount: 0, createTime: new Date() };
-    return newCategory;
+    const response = await addCategory(data);
+    return response as ICategory;
   },
-  async updateCategory(id: string, data: { name: string, description: string }): Promise<BlogCategory> {
+  // 更新分类
+  async updateCategory(id: string, data: UpdateCategoryDTO): Promise<ICategory> {
     console.log('API CALL: updateCategory with id and data', id, data);
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const updatedCategory: BlogCategory = { ...data, id, articleCount: Math.floor(Math.random() * 50), createTime: new Date() }; // articleCount and createTime would come from backend
-    return updatedCategory;
+    const response = await updateCategory(id, data);
+    return response as ICategory;
   },
-  async deleteCategory(id: string): Promise<void> {
-    console.log('API CALL: deleteCategory with id', id);
-    await new Promise(resolve => setTimeout(resolve, 300));
+  // 删除分类
+  async deleteCategory(id: string): Promise<boolean> {
+    return await deleteCategory(id);
   }
-};
-
-// --- Mock 数据生成 ---
-const generateMockData = (count: number = 35, query?: string): BlogCategory[] => {
-  const categories: BlogCategory[] = [];
-  const sampleNames = ['技术栈', '生活感悟', '学习笔记', '项目实战', '旅行游记', '美食探店', '前端开发', '后端架构', '数据库', '人工智能'];
-  for (let i = 0; i < count; i++) {
-    categories.push({
-      id: `cat-${Date.now()}-${Math.random().toString(36).substring(2, 9)}-${i}`,
-      name: `${sampleNames[Math.floor(Math.random() * sampleNames.length)]} ${i + 1}`,
-      description: `这是关于 ${sampleNames[Math.floor(Math.random() * sampleNames.length)]} 的描述 ${i + 1}。内容随机生成，仅供演示。`,
-      articleCount: Math.floor(Math.random() * 100),
-      createTime: new Date(Date.now() - Math.floor(Math.random() * 1000 * 60 * 60 * 24 * 30)), // 最近30天内的随机日期
-    });
-  }
-  let result = categories.sort((a, b) => b.createTime.getTime() - a.createTime.getTime());
-  if (query) {
-    const lowerQuery = query.toLowerCase();
-    result = result.filter(cat => cat.name.toLowerCase().includes(lowerQuery));
-  }
-  return result;
 };
 
 // --- Data Fetching ---
 const fetchCategories = async () => {
-  loading.value = true;
+  loading.value = true; // 开始加载数据，显示表格loading状态
   try {
-    // When backend is ready, pagination and search query will be passed to the API
-    // const response = await apiClient.getCategories({ page: currentPage.value, pageSize: pageSize.value, query: searchQuery.value });
-    // allCategories.value = response.data;
-    // totalCategories.value = response.total; // The API should return the total count for pagination
-
-    // For now, using mock data generation directly for demonstration
-    allCategories.value = generateMockData(35, searchQuery.value); // Mock data still used here
-    // totalCategories will be computed based on allCategories.length for now
+    // 调用 apiClient 获取分类数据
+    const response = await apiClient.getCategories({ page: currentPage.value, pageSize: pageSize.value, query: searchQuery.value });
+    allCategories.value = response?.categories || []; // 更新 allCategories 状态
+    // 注意：此处后端返回的 response 结构中应包含 categories 数组。
   } catch (error) {
     console.error("Failed to fetch categories:", error);
     ElMessage.error('获取类型列表失败！');
-    allCategories.value = []; // Clear data on error
+    allCategories.value = [];
   } finally {
     loading.value = false;
   }
 };
 
 onMounted(() => {
-  allCategories.value = generateMockData(); // Initial mock load for local filtering demo
-  // fetchCategories(); // Uncomment this when you want to use the API placeholder for initial load
+  fetchCategories(); // 组件挂载后立即获取分类数据
 });
 
 // --- 计算属性 ---
+// 根据搜索查询过滤分类列表 (客户端过滤)
 const filteredCategories = computed(() => {
+  // 如果搜索查询为空，则返回所有分类
   if (!searchQuery.value.trim()) {
     return allCategories.value;
   }
+  // 将搜索查询转换为小写以进行不区分大小写的比较
   const lowerSearchQuery = searchQuery.value.toLowerCase();
   return allCategories.value.filter(category =>
     category.name.toLowerCase().includes(lowerSearchQuery)
@@ -213,32 +180,37 @@ const filteredCategories = computed(() => {
 });
 
 const totalCategories = computed(() => filteredCategories.value.length);
-
+// 根据当前页和每页大小计算分页后的分类列表
 const paginatedCategories = computed(() => {
-  // This local pagination will be less relevant when backend handles pagination
   const start = (currentPage.value - 1) * pageSize.value;
   const end = start + pageSize.value;
   return filteredCategories.value.slice(start, end);
 });
 
+// 计算总页数
 const totalPages = computed(() => Math.ceil(totalCategories.value / pageSize.value));
 
 // --- 方法 ---
 
+// 打开添加类型的弹窗
 const openAddDialog = () => {
   dialogTitle.value = '添加新类型';
+  // 重置表单数据
   categoryForm.value = { id: null, name: '', description: '' };
   dialogVisible.value = true;
+  // DOM 更新后清除表单校验状态
   nextTick(() => {
     categoryFormRef.value?.clearValidate();
   });
 };
 
-const openEditDialog = (category: BlogCategory) => {
+// 打开编辑类型的弹窗
+const openEditDialog = (category: ICategory) => {
   dialogTitle.value = '编辑类型';
-  // Create a new object for the form to avoid direct mutation of the table data
-  categoryForm.value = { id: category.id, name: category.name, description: category.description };
+  // 用选中的分类数据填充表单
+  categoryForm.value = { id: category.id as string, name: category.name, description: category.description as string };
   dialogVisible.value = true;
+  // DOM 更新后清除表单校验状态
   nextTick(() => {
     categoryFormRef.value?.clearValidate();
   });
@@ -246,55 +218,54 @@ const openEditDialog = (category: BlogCategory) => {
 
 const closeDialog = () => {
   dialogVisible.value = false;
-  // It's good practice to reset the form, though opening dialogs already sets new values
+  // 关闭弹窗时重置表单字段（Element Plus 的方法）
   categoryFormRef.value?.resetFields();
 };
 
+// 提交表单 (添加或编辑)
 const submitForm = async () => {
   if (!categoryFormRef.value) return;
-  formSubmitting.value = true;
+  formSubmitting.value = true; // 设置表单提交状态为 true，用于按钮 loading
 
   try {
+    // 校验表单
     const valid = await categoryFormRef.value.validate();
 
     if (!valid) {
       ElMessage.error('请检查表单输入！');
-      // formSubmitting will be reset in the finally block
       return;
     }
 
-    const dataToSubmit = {
+    const dataToSubmit = { // 准备提交的数据
       name: categoryForm.value.name.trim(),
       description: categoryForm.value.description.trim(),
     };
 
-    if (categoryForm.value.id) { // Edit mode
-      // const updatedCategory = await apiClient.updateCategory(categoryForm.value.id, dataToSubmit);
-      // const index = allCategories.value.findIndex(cat => cat.id === updatedCategory.id);
-      // if (index !== -1) allCategories.value[index] = updatedCategory; else fetchCategories(); // or update locally
-      // ElMessage.success('类型更新成功！');
-      // Mock update:
-      const index = allCategories.value.findIndex(cat => cat.id === categoryForm.value.id);
-      if (index !== -1) allCategories.value[index] = { ...allCategories.value[index], ...dataToSubmit };
-      ElMessage.success('类型更新成功 (Mock)！');
-    } else { // Add mode
-      // const newCategory = await apiClient.createCategory(dataToSubmit);
-      // allCategories.value.unshift(newCategory); // Or re-fetch: fetchCategories();
-      // ElMessage.success('类型添加成功！');
-      // Mock add:
-      const newMockCategory: BlogCategory = { ...dataToSubmit, id: `cat-mock-${Date.now()}`, articleCount: 0, createTime: new Date() };
-      allCategories.value.unshift(newMockCategory);
-      ElMessage.success('类型添加成功 (Mock)！');
+    if (categoryForm.value.id) {
+      // Edit mode
+      const updatedCategory = await apiClient.updateCategory(categoryForm.value.id, dataToSubmit);
+      // 更新本地 allCategories 数组中的对应项
+      const index = allCategories.value.findIndex(cat => cat.id === updatedCategory.id);
+      if (index !== -1) allCategories.value[index] = updatedCategory; else fetchCategories(); // or update locally
+      ElMessage.success(`类型${updateCategory.name}更新成功！`);
+    } else {
+      // Add mode
+      const newCategory = await apiClient.createCategory(dataToSubmit);
+      // 新增的类型博客文章数量默认设为0
+      newCategory.postCount = 0
+      // 将新分类添加到列表的开头
+      allCategories.value.unshift(newCategory);
+      ElMessage.success(`类型(${newCategory.name})添加成功！`);
     }
     closeDialog();
-    // fetchCategories(); // Re-fetch data after add/edit to ensure consistency if not updating locally
   } catch (error) {
-    ElMessage.error('操作失败，请重试。');
+    ElMessage.error('操作失败，请检查表单输入！');
   } finally {
-    formSubmitting.value = false; // Ensure this is always called
+    formSubmitting.value = false; // 无论成功或失败，结束表单提交状态
   }
 };
 
+// 处理删除分类的逻辑
 const handleDeleteCategory = (categoryId: string) => {
   ElMessageBox.confirm(
     '确定要删除这个类型吗？相关的文章可能需要额外处理。',
@@ -305,47 +276,37 @@ const handleDeleteCategory = (categoryId: string) => {
       type: 'warning',
     }
   ).then(async () => {
-    loading.value = true; // Show loading for delete operation
+    loading.value = true; // 开始删除操作，显示表格loading
     try {
-      // await apiClient.deleteCategory(categoryId);
-      // ElMessage.success('类型删除成功！');
-      // fetchCategories(); // Re-fetch the list
-
-      // Mock delete:
-      allCategories.value = allCategories.value.filter(cat => cat.id !== categoryId);
-      if (paginatedCategories.value.length === 0 && currentPage.value > 1 && totalCategories.value > 0) { // totalCategories.value was used before, now it's computed
-        currentPage.value--;
-      } else if (paginatedCategories.value.length === 0 && totalCategories.value === 0) {
-        currentPage.value = 1;
+      const removeResponse = await apiClient.deleteCategory(categoryId);
+      if (removeResponse) {
+        ElMessage.success('类型删除成功！');
+        fetchCategories(); // 删除成功后重新获取列表
+      } else {
+        ElMessage.error('类型删除失败！');
       }
-      ElMessage.success('类型删除成功 (Mock)！');
-
     } catch (error) {
       console.error("Failed to delete category:", error);
       ElMessage.error('删除类型失败！');
     } finally {
-      loading.value = false;
+      loading.value = false; // 结束删除操作
     }
   }).catch(() => {
     ElMessage.info('已取消删除');
   });
 };
 
+// 处理每页显示数量变化的逻辑
 const handlePageSizeChange = (val: number) => {
   pageSize.value = val;
-  currentPage.value = 1; // Reset to page 1 when size changes for consistency
-  // fetchCategories(); // Re-fetch data with new page size
+  currentPage.value = 1; // 更改每页大小时，通常重置到第一页
+  // 注意：由于是客户端分页，此处不需要重新调用 fetchCategories
 };
 
+// 处理当前页码变化的逻辑
 const handleCurrentPageChange = (val: number) => {
   currentPage.value = val;
-  // fetchCategories(); // Re-fetch data for the new page
-};
-
-const formatDate = (date: Date | string): string => {
-  if (!date) return '';
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  // 注意：由于是客户端分页，此处不需要重新调用 fetchCategories
 };
 
 </script>

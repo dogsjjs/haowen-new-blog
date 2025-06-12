@@ -1,5 +1,5 @@
-import http from '@/utils/request'; // Using 'http' as per your example
-import type { ICategory, CreateCategoryDTO, UpdateCategoryDTO } from '@/types/category.type'; // Adjust path as needed
+import http from '@/utils/request';
+import type { ICategory, CreateCategoryDTO, UpdateCategoryDTO, QueryCategoryDTO, CategoryResult } from '@/types/category.type'; // Adjust path as needed
 
 
 enum PATH {
@@ -9,7 +9,6 @@ enum PATH {
   UPDATE = '/category/', // Base path, ID will be appended, e.g., /category/:id
   DELETE = '/category/', // Base path, ID will be appended, e.g., /category/:id
 }
-
 
 export async function addCategory(data: CreateCategoryDTO): Promise<ICategory | null> {
   try {
@@ -28,9 +27,9 @@ export async function addCategory(data: CreateCategoryDTO): Promise<ICategory | 
   }
 }
 
-export async function getAllCategories(): Promise<ICategory[] | null> {
+export async function getAllCategories(data: QueryCategoryDTO): Promise<CategoryResult | null> {
   try {
-    const response = await http.get<ICategory[]>(PATH.GET_ALL);
+    const response = await http.get<CategoryResult>(PATH.GET_ALL, data);
     if (response.success && response.data) {
       return response.data;
     } else {
