@@ -42,7 +42,8 @@
 
 
       <!-- 添加/编辑文章弹窗 -->
-      <el-dialog v-model="dialogVisible" :title="dialogTitle" width="clamp(600px, 80%, 1200px)" @close="closeDialog" :close-on-click-modal="false">
+      <el-dialog v-model="dialogVisible" :title="dialogTitle" width="clamp(600px, 80%, 1200px)" @close="closeDialog"
+        :close-on-click-modal="false">
         <el-form :model="postForm" ref="postFormRef" :rules="postFormRules" label-width="100px"
           v-loading="formSubmitting || selectOptionsLoading">
           <el-row>
@@ -70,7 +71,11 @@
             <el-col :span="12">
               <el-form-item label="博客类型" prop="categoryId">
                 <el-select v-model="postForm.categoryId" placeholder="请选择博客类型" style="width: 100%;">
-                  <el-option v-for="cat in availableCategories" :key="cat.id" :label="cat.name" :value="cat.id" />
+                  <el-option v-for="cat in availableCategories" :key="cat.id" :label="cat.name" :value="cat.id">
+                    <span style="float: left">
+                      <Icon :icon="cat.icon as string" style="margin-right: 5px;" />{{ cat.name }}
+                    </span>
+                  </el-option>
                 </el-select>
               </el-form-item>
             </el-col>
@@ -78,11 +83,21 @@
               <el-form-item label="博客标签" prop="tagIds">
                 <el-select v-model="postForm.tagIds" multiple placeholder="请选择博客标签 (可多选)" style="width: 100%;"
                   collapse-tags collapse-tags-tooltip>
-                  <el-option v-for="tag in availableTags" :key="tag.id" :label="tag.name" :value="tag.id" />
+                  <el-option v-for="tag in availableTags" :key="tag.id" :label="tag.name" :value="tag.id">
+                    <span style="float: left">
+                      <Icon :icon="tag.icon as string" style="margin-right: 5px;" />{{ tag.name }}
+                    </span>
+                  </el-option>
                 </el-select>
               </el-form-item>
             </el-col>
-          </el-row>
+          </el-row>          
+
+          <el-form-item label="文章摘要" prop="description">
+            <el-input v-model="postForm.description" type="textarea" :rows="3"
+              placeholder="请输入文章摘要，利于SEO和列表展示 (可选, 最多200字)" maxlength="200" show-word-limit />
+          </el-form-item>
+          
 
           <el-form-item label="博客内容" prop="content">
             <!-- Markdown Editor Placeholder -->
@@ -125,13 +140,19 @@
       <el-dialog v-model="postDetailsDialogVisible" :title="selectedPostForDetails?.title || '文章详情'"
         width="clamp(600px, 80%, 1000px)" @close="closePostDetailsDialog" draggable class="post-details-dialog">
         <div v-if="selectedPostForDetails" class="details-content">
+          <div v-if="selectedPostForDetails.description" class="post-description">
+            <strong>摘要:</strong> {{ selectedPostForDetails.description }}
+          </div>
           <div class="post-meta">
-            <span v-if="selectedPostForDetails.category">类型: <el-tag size="small">{{ selectedPostForDetails.category.name
+            <span v-if="selectedPostForDetails.category">类型: <el-tag size="small">{{
+              selectedPostForDetails.category.name
             }}</el-tag></span>
-            <span v-if="selectedPostForDetails.tags && selectedPostForDetails.tags.length > 0" style="margin-left: 15px;">
+            <span v-if="selectedPostForDetails.tags && selectedPostForDetails.tags.length > 0"
+              style="margin-left: 15px;">
               标签:
-              <el-tag v-for="tag in selectedPostForDetails.tags" :key="tag.id" size="small" style="margin-right: 5px;">{{
-                tag.name }}</el-tag>
+              <el-tag v-for="tag in selectedPostForDetails.tags" :key="tag.id" size="small"
+                style="margin-right: 5px;">{{
+                  tag.name }}</el-tag>
             </span>
             <span style="margin-left: 15px;">创建于: {{ formatDate(selectedPostForDetails.createTime) }}</span>
           </div>
@@ -148,7 +169,8 @@
         <el-table-column label="首图" width="100" align="center">
           <template #default="scope">
             <el-image style="width: 80px; height: 40px" :src="scope.row.coverImage || defaultCoverImage"
-              :preview-src-list="scope.row.coverImage ? [scope.row.coverImage] : []" fit="cover" lazy preview-teleported>
+              :preview-src-list="scope.row.coverImage ? [scope.row.coverImage] : []" fit="cover" lazy
+              preview-teleported>
               <template #error>
                 <div class="image-slot">
                   <el-icon>
@@ -209,14 +231,14 @@
           </template>
         </el-table-column>
         <el-table-column prop="viewCount" label="浏览量" width="100" sortable align="center" />
-        <el-table-column prop="createTime" label="创建时间" width="170" sortable>
+        <el-table-column prop="createdAt" label="创建时间" width="170" sortable>
           <template #default="scope">
-            {{ formatDate(scope.row.createTime) }}
+            {{ formatDate(scope.row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column prop="updateTime" label="更新时间" width="170" sortable>
+        <el-table-column prop="updatedAt" label="更新时间" width="170" sortable>
           <template #default="scope">
-            {{ formatDate(scope.row.updateTime) }}
+            {{ formatDate(scope.row.updatedAt) }}
           </template>
         </el-table-column>
         <el-table-column label="操作" width="180" fixed="right" align="center">
@@ -243,44 +265,34 @@
 
 <script lang='ts' setup>
 import { ref, computed, onMounted, reactive, nextTick, watch } from 'vue';
+import { Icon } from '@iconify/vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type UploadProps, type UploadRawFile } from 'element-plus';
 import { Search as SearchIcon, Plus as PlusIcon, Edit as EditIcon, Delete as DeleteIcon, Picture as PictureIcon } from '@element-plus/icons-vue';
 import { useThemeStore } from '@/stores/theme'; // 导入主题 store
-import { MdEditor, MdPreview, type Themes } from 'md-editor-v3';
+import { MdEditor, MdPreview } from 'md-editor-v3';
 import 'md-editor-v3/lib/style.css';
+// --- 工具函数导入 ---
+import { formatDate } from '@/utils/commonUtils';
+
+import { getAllCategoriesForSelect } from '@/api/category.api';
+import type { ICategory } from '@/types/category.type';
+
+import { getAllTagsForSelect } from '@/api/tag.api';
+import type { ITag } from '@/types/tag.type';
+
+import { getAllPosts, addPost } from '@/api/post.api';
+import type { CreatePostDTO, IPost, PostQueryDTO } from '@/types/post.type';
 
 // --- 接口定义 ---
 // 博客分类
-interface BlogCategory {
-  id: string;
-  name: string;
-  description?: string;
-}
+type BlogCategory = Pick<ICategory, 'id' | 'name' | 'icon'>
 
 // 博客标签
-interface BlogTag {
-  id: string;
-  name: string;
-  description?: string;
-}
+type BlogTag = Pick<ITag, 'id' | 'name' | 'icon'>
+
 
 // 博客文章
-interface BlogPost {
-  id: string;
-  title: string;
-  slug?: string; // 自定义 URL
-  coverImage?: string; // 首图 URL
-  categoryId: string;
-  category?: BlogCategory; // 分类对象
-  tagIds: string[];
-  tags?: BlogTag[]; // 标签对象数组
-  content: string; // Markdown 内容
-  isRecommended: boolean;
-  isPublic: boolean;
-  viewCount: number;
-  createTime: Date;
-  updateTime: Date;
-}
+type BlogPost = IPost;
 
 // --- 默认首图 ---
 const defaultCoverImage = 'data:image/svg+xml;charset=UTF-8,...'; // SVG 占位图
@@ -332,10 +344,11 @@ const closePostDetailsDialog = () => {
 };
 
 // 初始化表单数据
-const initialPostFormState = (): Omit<BlogPost, 'id' | 'category' | 'tags' | 'viewCount' | 'createTime' | 'updateTime'> & { id: string | null } => ({
+const initialPostFormState = (): Omit<BlogPost, 'id' | 'category' | 'tags' | 'viewCount' | 'createTime' | 'updateTime' | 'description'> & { id: string | null; description: string } => ({
   id: null,
   title: '',
   slug: '',
+  description: '',
   coverImage: '',
   categoryId: '',
   tagIds: [],
@@ -357,65 +370,30 @@ const postFormRules = reactive<FormRules>({
   categoryId: [{ required: true, message: '请选择博客类型', trigger: 'change' }],
   // tagIds: [{ type: 'array', min: 1, message: '至少选择一个标签', trigger: 'change' }], // 可选：标签必选
   content: [{ required: true, message: '文章内容不能为空', trigger: 'blur' }],
+  description: [{ max: 200, message: '摘要长度不能超过200个字符', trigger: 'blur' }],
   coverImage: [{ required: false, message: '请上传博客首图', trigger: 'change' }],
 });
 
-// --- API 服务（模拟） ---
-// 实际开发中应替换为真实 API 调用
+// --- API 服务 ---
 const apiClient = {
-  // 获取文章列表（带筛选、分页）
-  async getPosts(params: {
-    page: number, pageSize: number, title?: string, categoryId?: string,
-    tagIds?: string[], isRecommended?: boolean | null, isPublic?: boolean | null
-  }): Promise<{ data: BlogPost[], total: number }> {
-    // 模拟接口延迟
-    await new Promise(resolve => setTimeout(resolve, 700));
-    // 生成 mock 数据并模拟筛选
-    let items = generateMockPosts(100);
-
-    if (params.title) {
-      items = items.filter(p => p.title.toLowerCase().includes(params.title!.toLowerCase()));
-    }
-    if (params.categoryId) {
-      items = items.filter(p => p.categoryId === params.categoryId);
-    }
-    if (params.tagIds && params.tagIds.length > 0) {
-      items = items.filter(p => params.tagIds!.some(tid => p.tagIds.includes(tid)));
-    }
-    if (params.isRecommended !== null && params.isRecommended !== undefined) {
-      items = items.filter(p => p.isRecommended === params.isRecommended);
-    }
-    if (params.isPublic !== null && params.isPublic !== undefined) {
-      items = items.filter(p => p.isPublic === params.isPublic);
-    }
-
-    const total = items.length;
-    const start = (params.page - 1) * params.pageSize;
-    const end = start + params.pageSize;
-    // 填充分类和标签对象
-    const paginatedData = items.slice(start, end).map(post => ({
-      ...post,
-      category: availableCategories.value.find(c => c.id === post.categoryId),
-      tags: post.tagIds.map(tid => availableTags.value.find(t => t.id === tid)).filter(t => t) as BlogTag[]
-    }));
-    return { data: paginatedData, total };
+  async getPostList(): Promise<{ data: BlogPost[], total: number }> {
+    // 后端返回数据
+    const response = await getAllPosts();
+    return { data: response.posts, total: response.total };
   },
   // 新建文章
-  async createPost(data: Omit<BlogPost, 'id' | 'category' | 'tags' | 'viewCount' | 'createTime' | 'updateTime'>): Promise<BlogPost> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const newPost: BlogPost = {
+  async createPost(data: CreatePostDTO): Promise<BlogPost | null> {
+    const newPost: CreatePostDTO = {
       ...data,
-      id: `post-api-${Date.now()}`,
-      viewCount: 0,
-      createTime: new Date(),
-      updateTime: new Date(),
-      category: availableCategories.value.find(c => c.id === data.categoryId),
-      tags: data.tagIds.map(tid => availableTags.value.find(t => t.id === tid)).filter(t => t) as BlogTag[]
+      description: data.description,
+      categoryId: availableCategories.value.find(c => c.id === data.categoryId)?.id as string,
+      tagIds: data.tagIds,
     };
-    return newPost;
+    const response = await addPost(newPost)
+    return response;
   },
   // 更新文章
-  async updatePost(id: string, data: Partial<Omit<BlogPost, 'id' | 'category' | 'tags' | 'viewCount' | 'createTime' | 'updateTime'>>): Promise<BlogPost> {
+  async updatePost(id: string, data: Partial<Omit<BlogPost, 'id' | 'category' | 'tags' | 'viewCount' | 'createTime' | 'updateTime' | 'description'> & { description?: string }>): Promise<BlogPost> {
     await new Promise(resolve => setTimeout(resolve, 300));
     const existingPost = allPosts.value.find(p => p.id === id) || generateMockPosts(1)[0];
     const updatedPostData = { ...existingPost, ...data, updateTime: new Date() } as BlogPost;
@@ -429,25 +407,45 @@ const apiClient = {
   },
   // 获取分类选项
   async getCategoriesForSelect(): Promise<BlogCategory[]> {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    return [
-      { id: 'cat1', name: '技术分享' }, { id: 'cat2', name: '生活随笔' },
-      { id: 'cat3', name: '项目总结' }, { id: 'cat4', name: '学习笔记' }
-    ];
+    return await getAllCategoriesForSelect();
   },
   // 获取标签选项
   async getTagsForSelect(): Promise<BlogTag[]> {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    return [
-      { id: 'tag1', name: 'Vue' }, { id: 'tag2', name: 'JavaScript' }, { id: 'tag3', name: '后端' },
-      { id: 'tag4', name: '随笔' }, { id: 'tag5', name: 'ElementPlus' }, { id: 'tag6', name: 'Node.js' }
-    ];
+    return await getAllTagsForSelect();
   },
   // 上传首图
   async uploadCoverImage(file: File): Promise<{ url: string }> {
     await new Promise(resolve => setTimeout(resolve, 1000));
     return { url: URL.createObjectURL(file) }; // 返回本地 blob URL
+  },
+  // 生成博客文章
+  async generatePosts(count: number = 25): Promise<void> {
+  const sampleTitles = ['深入理解Vue3响应式原理', '我的高效工作流分享', 'Element Plus实践指南', 'Node.js后端开发心得', '一次难忘的旅行', '关于状态管理的思考'];
+  const sampleContent = "这是文章的Markdown内容...\n\n## 这是一个二级标题\n\n- 列表项1\n- 列表项2\n\n```javascript\nconsole.log('Hello World');\n```\n";
+  const sampleDescriptions = ['本文将带你深入探索Vue3的响应式系统是如何工作的。', '分享一些我日常使用的小技巧，希望能提高你的工作效率。', '一篇关于如何在项目中使用Element Plus UI库的详细指南。', '记录了我在Node.js后端开发过程中遇到的一些问题和解决方案。', '一次令人印象深刻的旅途见闻与感悟。', '探讨前端状态管理的各种方案及其优缺点。'];
+
+  for (let i = 0; i < count; i++) {
+    const createTime = new Date(Date.now() - Math.floor(Math.random() * 1000 * 60 * 60 * 24 * 90));
+    const updateTime = Math.random() > 0.5 ? new Date(createTime.getTime() + Math.floor(Math.random() * 1000 * 60 * 60 * 24 * 10)) : createTime;
+    const randomCategory = availableCategories.value[Math.floor(Math.random() * availableCategories.value.length)];
+    const numTags = Math.floor(Math.random() * 4); // 0~3 个标签
+    const randomTags = availableTags.value.sort(() => 0.5 - Math.random()).slice(0, numTags);
+
+    const newPost: CreatePostDTO = {
+      title: `${sampleTitles[Math.floor(Math.random() * sampleTitles.length)]} #${i + 1}`,
+      slug: `mock-post-${i + 1}`,
+      coverImage: Math.random() > 0.3 ? `https://picsum.photos/seed/${i + 1}/300/150` : undefined,
+      description: Math.random() > 0.4 ? sampleDescriptions[Math.floor(Math.random() * sampleDescriptions.length)] : undefined,
+      categoryId: randomCategory ? randomCategory.id : (availableCategories.value[0]?.id || 'cat-unknown'),
+      tagIds: randomTags.map(t => t.id),
+      content: sampleContent + `\n\n这是文章 ${i + 1} 的唯一内容部分。`,
+      isRecommended: Math.random() > 0.7,
+      isPublic: Math.random() > 0.2,
+    };
+    const response = await addPost(newPost)
   }
+}
+
 };
 
 // --- Mock 数据生成 ---
@@ -456,6 +454,7 @@ const generateMockPosts = (count: number = 25): BlogPost[] => {
   const posts: BlogPost[] = [];
   const sampleTitles = ['深入理解Vue3响应式原理', '我的高效工作流分享', 'Element Plus实践指南', 'Node.js后端开发心得', '一次难忘的旅行', '关于状态管理的思考'];
   const sampleContent = "这是文章的Markdown内容...\n\n## 这是一个二级标题\n\n- 列表项1\n- 列表项2\n\n```javascript\nconsole.log('Hello World');\n```\n";
+  const sampleDescriptions = ['本文将带你深入探索Vue3的响应式系统是如何工作的。', '分享一些我日常使用的小技巧，希望能提高你的工作效率。', '一篇关于如何在项目中使用Element Plus UI库的详细指南。', '记录了我在Node.js后端开发过程中遇到的一些问题和解决方案。', '一次令人印象深刻的旅途见闻与感悟。', '探讨前端状态管理的各种方案及其优缺点。'];
 
   for (let i = 0; i < count; i++) {
     const createTime = new Date(Date.now() - Math.floor(Math.random() * 1000 * 60 * 60 * 24 * 90));
@@ -469,6 +468,7 @@ const generateMockPosts = (count: number = 25): BlogPost[] => {
       title: `${sampleTitles[Math.floor(Math.random() * sampleTitles.length)]} #${i + 1}`,
       slug: `mock-post-${i + 1}`,
       coverImage: Math.random() > 0.3 ? `https://picsum.photos/seed/${i + 1}/300/150` : undefined,
+      description: Math.random() > 0.4 ? sampleDescriptions[Math.floor(Math.random() * sampleDescriptions.length)] : undefined,
       categoryId: randomCategory ? randomCategory.id : (availableCategories.value[0]?.id || 'cat-unknown'),
       tagIds: randomTags.map(t => t.id),
       content: sampleContent + `\n\n这是文章 ${i + 1} 的唯一内容部分。`,
@@ -504,18 +504,8 @@ const fetchSelectOptions = async () => {
 const fetchPosts = async () => {
   loading.value = true;
   try {
-    const params = {
-      page: currentPage.value,
-      pageSize: pageSize.value,
-      title: filterForm.title || undefined,
-      categoryId: filterForm.categoryId || undefined,
-      tagIds: filterForm.tagIds.length > 0 ? filterForm.tagIds : undefined,
-      isRecommended: filterForm.isRecommended,
-      isPublic: filterForm.isPublic,
-    };
-    const response = await apiClient.getPosts(params);
+    const response = await apiClient.getPostList()
     allPosts.value = response.data;
-    // 这里 allPosts.value 已经是筛选和分页后的数据
   } catch (error) {
     ElMessage.error('获取文章列表失败！');
     allPosts.value = [];
@@ -576,8 +566,9 @@ const openEditDialog = (post: BlogPost) => {
     title: post.title,
     slug: post.slug || '',
     coverImage: post.coverImage || '',
+    description: post.description || '',
     categoryId: post.categoryId,
-    tagIds: [...post.tagIds],
+    tagIds: generateTagIdsList(post.tags) || [],
     content: post.content,
     isRecommended: post.isRecommended,
     isPublic: post.isPublic,
@@ -587,6 +578,11 @@ const openEditDialog = (post: BlogPost) => {
     postFormRef.value?.clearValidate();
   });
 };
+
+
+const generateTagIdsList = (tagList: ITag[]): string[] => {
+  return tagList.map(tag => tag.id || '');
+}
 
 // 关闭弹窗并重置表单
 const closeDialog = () => {
@@ -623,10 +619,11 @@ const submitForm = async () => {
       return;
     }
     // 构造提交数据
-    const dataToSubmit: Omit<BlogPost, 'id' | 'category' | 'tags' | 'viewCount' | 'createTime' | 'updateTime'> = {
+    const dataToSubmit: CreatePostDTO = {
       title: postForm.value.title.trim(),
       slug: postForm.value.slug?.trim() || undefined,
-      coverImage: postForm.value.coverImage || undefined,
+      coverImage: postForm.value.coverImage as string,
+      description: postForm.value.description?.trim(),
       categoryId: postForm.value.categoryId,
       tagIds: postForm.value.tagIds,
       content: postForm.value.content,
@@ -641,6 +638,7 @@ const submitForm = async () => {
         const updatedPostData = {
           ...oldPost,
           ...dataToSubmit,
+          description: dataToSubmit.description, //确保更新时也包含description
           updateTime: new Date(),
           category: availableCategories.value.find(c => c.id === dataToSubmit.categoryId),
           tags: dataToSubmit.tagIds.map(tid => availableTags.value.find(t => t.id === tid)).filter(t => t) as BlogTag[]
@@ -649,25 +647,16 @@ const submitForm = async () => {
       }
       ElMessage.success('文章更新成功 (Mock)！');
     } else { // 新增
-      const newMockPostData: BlogPost = {
-        ...dataToSubmit,
-        id: `post-mock-${Date.now()}`,
-        viewCount: 0,
-        createTime: new Date(),
-        updateTime: new Date(),
-        category: availableCategories.value.find(c => c.id === dataToSubmit.categoryId),
-        tags: dataToSubmit.tagIds.map(tid => availableTags.value.find(t => t.id === tid)).filter(t => t) as BlogTag[]
-      };
-      allPosts.value.unshift(newMockPostData);
+      await apiClient.createPost(dataToSubmit);
       ElMessage.success('文章发布成功 (Mock)！');
     }
     closeDialog();
     await fetchPosts(); // 刷新列表
   } catch (error) {
     ElMessage.error('操作失败，请重试。');
-   } finally {
-     formSubmitting.value = false;
-   }
+  } finally {
+    formSubmitting.value = false;
+  }
 };
 
 // 删除文章
@@ -707,14 +696,6 @@ const handlePageSizeChange = (val: number) => {
 const handleCurrentPageChange = (val: number) => {
   currentPage.value = val;
   fetchPosts();
-};
-
-// 格式化日期
-const formatDate = (date: Date | string): string => {
-  if (!date) return '';
-  const d = typeof date === 'string' ? new Date(date) : date;
-  if (isNaN(d.getTime())) return '无效日期';
-  return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
 </script>
@@ -810,6 +791,12 @@ const formatDate = (date: Date | string): string => {
   }
 
   .details-content {
+    .post-description {
+      margin-bottom: 15px;
+      padding: 10px;
+      background-color: var(--el-fill-color-lighter);
+      border-radius: 4px;
+    }
     .post-meta {
       margin-bottom: 10px; // Reduced margin for post meta
       font-size: 0.9em;

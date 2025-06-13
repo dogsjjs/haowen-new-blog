@@ -2,19 +2,17 @@ import http from '@/utils/request';
 import type { ICategory, CreateCategoryDTO, UpdateCategoryDTO, QueryCategoryDTO, CategoryResult } from '@/types/category.type'; // Adjust path as needed
 
 
-enum PATH {
-  ADD = '/category', // Corresponds to POST /category
-  GET_ALL = '/category', // Corresponds to GET /category
-  GET_BY_ID = '/category/', // Base path, ID will be appended, e.g., /category/:id
-  UPDATE = '/category/', // Base path, ID will be appended, e.g., /category/:id
-  DELETE = '/category/', // Base path, ID will be appended, e.g., /category/:id
+const API_PREFIX = '/category'; // 后端标签 API 的前缀
+
+enum CHILDREN_PATH {
+  FOR_SELECT = 'select-options', // Corresponds to POST /category
 }
 
 export async function addCategory(data: CreateCategoryDTO): Promise<ICategory | null> {
   try {
     // Assuming your http.post utility returns a structured response
     // e.g., { success: boolean, data?: ICategory, message?: string }
-    const response = await http.post<ICategory>(PATH.ADD, data);
+    const response = await http.post<ICategory>(API_PREFIX, data);
     if (response.success && response.data) {
       return response.data;
     } else {
@@ -29,7 +27,7 @@ export async function addCategory(data: CreateCategoryDTO): Promise<ICategory | 
 
 export async function getAllCategories(data: QueryCategoryDTO): Promise<CategoryResult | null> {
   try {
-    const response = await http.get<CategoryResult>(PATH.GET_ALL, data);
+    const response = await http.get<CategoryResult>(API_PREFIX, data);
     if (response.success && response.data) {
       return response.data;
     } else {
@@ -42,13 +40,28 @@ export async function getAllCategories(data: QueryCategoryDTO): Promise<Category
   }
 }
 
+
+export async function getAllCategoriesForSelect(): Promise<Pick<ICategory, 'id' | 'name' | 'icon'>[]> {
+  try {
+    const response = await http.get<Pick<ICategory, 'id' | 'name' | 'icon'>[]>(`${API_PREFIX}/${CHILDREN_PATH.FOR_SELECT}`);
+    if (response.success && response.data) {
+      return response.data
+    } else {
+      return [];
+    }
+  } catch (error) {
+    console.error('Error during getAllCategories request:', error);
+    return [];
+  }
+}
+
 export async function getCategoryById(id: string): Promise<ICategory | null> {
   if (!id) {
     console.error('getCategoryById: ID is required.');
     return null;
   }
   try {
-    const response = await http.get<ICategory>(`${PATH.GET_BY_ID}${id}`);
+    const response = await http.get<ICategory>(`${API_PREFIX}/${id}`);
     if (response.success && response.data) {
       return response.data;
     } else {
@@ -67,7 +80,7 @@ export async function updateCategory(id: string, data: UpdateCategoryDTO): Promi
     return null;
   }
   try {
-    const response = await http.put<ICategory>(`${PATH.UPDATE}${id}`, data);
+    const response = await http.put<ICategory>(`${API_PREFIX}/${id}`, data);
     if (response.success && response.data) {
       return response.data;
     } else {
@@ -93,7 +106,7 @@ export async function deleteCategory(id: string): Promise<boolean> {
     return false;
   }
   try {
-    const response = await http.delete<void>(`${PATH.DELETE}${id}`); // Backend might not return data for delete
+    const response = await http.delete<void>(`${API_PREFIX}/${id}`); // Backend might not return data for delete
     return response.success; // Assuming success flag indicates successful deletion
   } catch (error) {
     console.error(`Error during deleteCategory request for ID ${id}:`, error);

@@ -37,7 +37,7 @@
 import { ref, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router'; // 用于从路由获取参数
 import { getPostById, type PostDetail } from '@/data/blogPost'; // 导入数据获取函数和类型
-import { getAllPosts } from '@/api/post'
+import { getAllPosts } from '@/api/post.api'
 
 const post = ref<PostDetail | null>(null);
 const route = useRoute();

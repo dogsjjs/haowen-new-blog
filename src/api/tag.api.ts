@@ -1,7 +1,12 @@
 import http from '@/utils/request';
 import type { ITag, CreateTagDTO, UpdateTagDTO, TagResult, QueryTagDTO } from '@/types/tag.type';
 
-const API_PREFIX = '/tag'; // 后端标签 API 的前缀
+const API_PREFIX = '/tag';
+
+
+enum CHILDREN_PATH {
+  FOR_SELECT = 'select-options',
+}
 
 /**
  * 获取所有标签 (支持分页和搜索)
@@ -25,6 +30,22 @@ export async function getAllTags(params: QueryTagDTO): Promise<TagResult | null>
   } catch (error) {
     console.error('Error fetching all tags:', error);
     return null;
+  }
+}
+
+export async function getAllTagsForSelect(): Promise<Pick<ITag, 'id' | 'name' | 'icon'>[]> {
+  try {
+    // 假设后端返回的结构是 { success: boolean, data: TagResult, message?: string }
+    // 或者直接是 TagResult，如果 http 工具已处理外层包装
+    const response = (await http.get<Pick<ITag, 'id' | 'name' | 'icon'>[]>(`${API_PREFIX}/${CHILDREN_PATH.FOR_SELECT}`));
+    if (response.success && response.data) {
+      return response.data
+    } else {
+      return [];
+    }
+  } catch (error) {
+    console.error('Error fetching all tags:', error);
+    return [];
   }
 }
 
