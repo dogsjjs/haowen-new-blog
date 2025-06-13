@@ -10,17 +10,26 @@
       <!-- 操作与筛选区域 -->
       <el-form :model="filterForm" inline class="actions-bar">
         <el-form-item label="标题">
-          <el-input v-model="filterForm.title" placeholder="搜索文章标题..." :prefix-icon="SearchIcon" clearable />
+          <el-input v-model="filterForm.title" placeholder="搜索文章标题" :prefix-icon="SearchIcon" style="width: 160px;"
+            clearable />
         </el-form-item>
         <el-form-item label="类型">
-          <el-select v-model="filterForm.categoryId" placeholder="选择类型" clearable style="width: 150px;">
-            <el-option v-for="cat in availableCategories" :key="cat.id" :label="cat.name" :value="cat.id" />
+          <el-select v-model="filterForm.categoryId" placeholder="选择类型" clearable style="width: 120px;">
+            <el-option v-for="cat in availableCategories" :key="cat.id" :label="cat.name" :value="cat.id">
+              <span style="float: left">
+                <Icon :icon="cat.icon as string" style="margin-right: 5px;" />{{ cat.name }}
+              </span>
+            </el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="标签">
-          <el-select v-model="filterForm.tagIds" placeholder="选择标签 (可多选)" clearable multiple collapse-tags
-            collapse-tags-tooltip style="width: 200px;">
-            <el-option v-for="tag in availableTags" :key="tag.id" :label="tag.name" :value="tag.id" />
+          <el-select v-model="filterForm.tagIds" placeholder="选择标签" clearable multiple collapse-tags
+            collapse-tags-tooltip style="width: 120px;">
+            <el-option v-for="tag in availableTags" :key="tag.id" :label="tag.name" :value="tag.id">
+              <span style="float: left">
+                <Icon :icon="tag.icon as string" style="margin-right: 5px;" />{{ tag.name }}
+              </span>
+            </el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="推荐">
@@ -91,13 +100,13 @@
                 </el-select>
               </el-form-item>
             </el-col>
-          </el-row>          
+          </el-row>
 
           <el-form-item label="文章摘要" prop="description">
             <el-input v-model="postForm.description" type="textarea" :rows="3"
               placeholder="请输入文章摘要，利于SEO和列表展示 (可选, 最多200字)" maxlength="200" show-word-limit />
           </el-form-item>
-          
+
 
           <el-form-item label="博客内容" prop="content">
             <!-- Markdown Editor Placeholder -->
@@ -146,7 +155,7 @@
           <div class="post-meta">
             <span v-if="selectedPostForDetails.category">类型: <el-tag size="small">{{
               selectedPostForDetails.category.name
-            }}</el-tag></span>
+                }}</el-tag></span>
             <span v-if="selectedPostForDetails.tags && selectedPostForDetails.tags.length > 0"
               style="margin-left: 15px;">
               标签:
@@ -166,9 +175,9 @@
 
       <!-- 文章列表 -->
       <el-table :data="paginatedPosts" style="width: 100%; margin-top: 20px;" v-loading="loading" border stripe>
-        <el-table-column label="首图" width="100" align="center">
+        <el-table-column label="首图" width="150" align="center">
           <template #default="scope">
-            <el-image style="width: 80px; height: 40px" :src="scope.row.coverImage || defaultCoverImage"
+            <el-image :src="scope.row.coverImage || defaultCoverImage"
               :preview-src-list="scope.row.coverImage ? [scope.row.coverImage] : []" fit="cover" lazy
               preview-teleported>
               <template #error>
@@ -280,8 +289,8 @@ import type { ICategory } from '@/types/category.type';
 import { getAllTagsForSelect } from '@/api/tag.api';
 import type { ITag } from '@/types/tag.type';
 
-import { getAllPosts, addPost } from '@/api/post.api';
-import type { CreatePostDTO, IPost, PostQueryDTO } from '@/types/post.type';
+import { getAllPosts, addPost, updatePost as apiUpdatePost, deletePost as apiDeletePost } from '@/api/post.api';
+import type { CreatePostDTO, IPost, PostQueryDTO, updatePostDTO } from '@/types/post.type';
 
 // --- 接口定义 ---
 // 博客分类
@@ -304,6 +313,9 @@ const allPosts = ref<BlogPost[]>([]);
 const availableCategories = ref<BlogCategory[]>([]);
 // 标签选项
 const availableTags = ref<BlogTag[]>([]);
+
+const filteredPosts = ref<BlogPost[]>([]);
+
 
 // 筛选表单
 const filterForm = reactive({
@@ -393,17 +405,12 @@ const apiClient = {
     return response;
   },
   // 更新文章
-  async updatePost(id: string, data: Partial<Omit<BlogPost, 'id' | 'category' | 'tags' | 'viewCount' | 'createTime' | 'updateTime' | 'description'> & { description?: string }>): Promise<BlogPost> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const existingPost = allPosts.value.find(p => p.id === id) || generateMockPosts(1)[0];
-    const updatedPostData = { ...existingPost, ...data, updateTime: new Date() } as BlogPost;
-    updatedPostData.category = availableCategories.value.find(c => c.id === updatedPostData.categoryId);
-    updatedPostData.tags = updatedPostData.tagIds.map(tid => availableTags.value.find(t => t.id === tid)).filter(t => t) as BlogTag[];
-    return updatedPostData;
+  async updatePost(id: string, data: updatePostDTO): Promise<BlogPost> {
+    return await apiUpdatePost(id, data);
   },
   // 删除文章
   async deletePost(id: string): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await apiDeletePost(id);
   },
   // 获取分类选项
   async getCategoriesForSelect(): Promise<BlogCategory[]> {
@@ -417,69 +424,7 @@ const apiClient = {
   async uploadCoverImage(file: File): Promise<{ url: string }> {
     await new Promise(resolve => setTimeout(resolve, 1000));
     return { url: URL.createObjectURL(file) }; // 返回本地 blob URL
-  },
-  // 生成博客文章
-  async generatePosts(count: number = 25): Promise<void> {
-  const sampleTitles = ['深入理解Vue3响应式原理', '我的高效工作流分享', 'Element Plus实践指南', 'Node.js后端开发心得', '一次难忘的旅行', '关于状态管理的思考'];
-  const sampleContent = "这是文章的Markdown内容...\n\n## 这是一个二级标题\n\n- 列表项1\n- 列表项2\n\n```javascript\nconsole.log('Hello World');\n```\n";
-  const sampleDescriptions = ['本文将带你深入探索Vue3的响应式系统是如何工作的。', '分享一些我日常使用的小技巧，希望能提高你的工作效率。', '一篇关于如何在项目中使用Element Plus UI库的详细指南。', '记录了我在Node.js后端开发过程中遇到的一些问题和解决方案。', '一次令人印象深刻的旅途见闻与感悟。', '探讨前端状态管理的各种方案及其优缺点。'];
-
-  for (let i = 0; i < count; i++) {
-    const createTime = new Date(Date.now() - Math.floor(Math.random() * 1000 * 60 * 60 * 24 * 90));
-    const updateTime = Math.random() > 0.5 ? new Date(createTime.getTime() + Math.floor(Math.random() * 1000 * 60 * 60 * 24 * 10)) : createTime;
-    const randomCategory = availableCategories.value[Math.floor(Math.random() * availableCategories.value.length)];
-    const numTags = Math.floor(Math.random() * 4); // 0~3 个标签
-    const randomTags = availableTags.value.sort(() => 0.5 - Math.random()).slice(0, numTags);
-
-    const newPost: CreatePostDTO = {
-      title: `${sampleTitles[Math.floor(Math.random() * sampleTitles.length)]} #${i + 1}`,
-      slug: `mock-post-${i + 1}`,
-      coverImage: Math.random() > 0.3 ? `https://picsum.photos/seed/${i + 1}/300/150` : undefined,
-      description: Math.random() > 0.4 ? sampleDescriptions[Math.floor(Math.random() * sampleDescriptions.length)] : undefined,
-      categoryId: randomCategory ? randomCategory.id : (availableCategories.value[0]?.id || 'cat-unknown'),
-      tagIds: randomTags.map(t => t.id),
-      content: sampleContent + `\n\n这是文章 ${i + 1} 的唯一内容部分。`,
-      isRecommended: Math.random() > 0.7,
-      isPublic: Math.random() > 0.2,
-    };
-    const response = await addPost(newPost)
   }
-}
-
-};
-
-// --- Mock 数据生成 ---
-// 生成指定数量的 mock 文章
-const generateMockPosts = (count: number = 25): BlogPost[] => {
-  const posts: BlogPost[] = [];
-  const sampleTitles = ['深入理解Vue3响应式原理', '我的高效工作流分享', 'Element Plus实践指南', 'Node.js后端开发心得', '一次难忘的旅行', '关于状态管理的思考'];
-  const sampleContent = "这是文章的Markdown内容...\n\n## 这是一个二级标题\n\n- 列表项1\n- 列表项2\n\n```javascript\nconsole.log('Hello World');\n```\n";
-  const sampleDescriptions = ['本文将带你深入探索Vue3的响应式系统是如何工作的。', '分享一些我日常使用的小技巧，希望能提高你的工作效率。', '一篇关于如何在项目中使用Element Plus UI库的详细指南。', '记录了我在Node.js后端开发过程中遇到的一些问题和解决方案。', '一次令人印象深刻的旅途见闻与感悟。', '探讨前端状态管理的各种方案及其优缺点。'];
-
-  for (let i = 0; i < count; i++) {
-    const createTime = new Date(Date.now() - Math.floor(Math.random() * 1000 * 60 * 60 * 24 * 90));
-    const updateTime = Math.random() > 0.5 ? new Date(createTime.getTime() + Math.floor(Math.random() * 1000 * 60 * 60 * 24 * 10)) : createTime;
-    const randomCategory = availableCategories.value[Math.floor(Math.random() * availableCategories.value.length)];
-    const numTags = Math.floor(Math.random() * 4); // 0~3 个标签
-    const randomTags = availableTags.value.sort(() => 0.5 - Math.random()).slice(0, numTags);
-
-    posts.push({
-      id: `post-${Date.now()}-${Math.random().toString(36).substring(2, 9)}-${i}`,
-      title: `${sampleTitles[Math.floor(Math.random() * sampleTitles.length)]} #${i + 1}`,
-      slug: `mock-post-${i + 1}`,
-      coverImage: Math.random() > 0.3 ? `https://picsum.photos/seed/${i + 1}/300/150` : undefined,
-      description: Math.random() > 0.4 ? sampleDescriptions[Math.floor(Math.random() * sampleDescriptions.length)] : undefined,
-      categoryId: randomCategory ? randomCategory.id : (availableCategories.value[0]?.id || 'cat-unknown'),
-      tagIds: randomTags.map(t => t.id),
-      content: sampleContent + `\n\n这是文章 ${i + 1} 的唯一内容部分。`,
-      isRecommended: Math.random() > 0.7,
-      isPublic: Math.random() > 0.2,
-      viewCount: Math.floor(Math.random() * 2000),
-      createTime: createTime,
-      updateTime: updateTime,
-    });
-  }
-  return posts.sort((a, b) => b.createTime.getTime() - a.createTime.getTime());
 };
 
 // --- 数据获取 ---
@@ -506,6 +451,7 @@ const fetchPosts = async () => {
   try {
     const response = await apiClient.getPostList()
     allPosts.value = response.data;
+    filteredPosts.value = response.data;
   } catch (error) {
     ElMessage.error('获取文章列表失败！');
     allPosts.value = [];
@@ -522,15 +468,27 @@ onMounted(async () => {
 
 // 监听筛选条件变化，自动刷新列表
 watch(filterForm, () => {
+  // 筛选allPosts
+  console.log(filterForm);
+  const filtered = allPosts.value.filter(post => {
+    const titleMatch = post.title.toLowerCase().includes(filterForm.title.toLowerCase());
+    const categoryMatch = filterForm.categoryId ? post.categoryId === filterForm.categoryId : true;
+    const tagMatch = filterForm.tagIds.length > 0 ? filterForm.tagIds.some(tagId => post.tags.some(t => t.id === tagId)) : true;
+    const isRecommendedMatch = (filterForm.isRecommended === null || filterForm.isRecommended === undefined) ? true : post.isRecommended === filterForm.isRecommended;
+    const isPublicMatch = (filterForm.isPublic === null || filterForm.isPublic === undefined) ? true : post.isPublic === filterForm.isPublic;
+    return titleMatch && categoryMatch && tagMatch && isRecommendedMatch && isPublicMatch;
+  });
+  filteredPosts.value = filtered;
+  // 重置分页
   currentPage.value = 1;
-  fetchPosts();
+  // 重置筛选条件时，恢复原始数据
+  if (!filterForm.title && !filterForm.categoryId && filterForm.tagIds.length === 0 && filterForm.isRecommended === null && filterForm.isPublic === null) {
+    filteredPosts.value = allPosts.value;
+  }
+  // fetchPosts();
 }, { deep: true });
 
 // --- 计算属性 ---
-// 过滤后的文章（实际已由 API 处理，这里保留以便扩展）
-const filteredPosts = computed(() => {
-  return allPosts.value;
-});
 
 // 总文章数（实际应由 API 返回）
 const totalPosts = computed(() => {
@@ -631,24 +589,27 @@ const submitForm = async () => {
       isPublic: postForm.value.isPublic,
     };
 
+    const updateDataToSubmit: updatePostDTO = {
+      title: postForm.value.title.trim(),
+      slug: postForm.value.slug?.trim() || undefined,
+      coverImage: postForm.value.coverImage as string,
+      description: postForm.value.description?.trim(),
+      categoryId: postForm.value.categoryId,
+      tagIds: postForm.value.tagIds,
+      content: postForm.value.content,
+      isRecommended: postForm.value.isRecommended,
+      isPublic: postForm.value.isPublic,
+    };
+
     if (postForm.value.id) { // 编辑
       const index = allPosts.value.findIndex(p => p.id === postForm.value.id);
       if (index !== -1) {
-        const oldPost = allPosts.value[index];
-        const updatedPostData = {
-          ...oldPost,
-          ...dataToSubmit,
-          description: dataToSubmit.description, //确保更新时也包含description
-          updateTime: new Date(),
-          category: availableCategories.value.find(c => c.id === dataToSubmit.categoryId),
-          tags: dataToSubmit.tagIds.map(tid => availableTags.value.find(t => t.id === tid)).filter(t => t) as BlogTag[]
-        };
-        allPosts.value[index] = updatedPostData;
+        apiClient.updatePost(postForm.value.id, updateDataToSubmit);
       }
-      ElMessage.success('文章更新成功 (Mock)！');
+      ElMessage.success('文章更新成功！');
     } else { // 新增
       await apiClient.createPost(dataToSubmit);
-      ElMessage.success('文章发布成功 (Mock)！');
+      ElMessage.success('文章发布成功！');
     }
     closeDialog();
     await fetchPosts(); // 刷新列表
@@ -668,8 +629,8 @@ const handleDeletePost = (postId: string) => {
   }).then(async () => {
     loading.value = true;
     try {
-      allPosts.value = allPosts.value.filter(p => p.id !== postId);
-      ElMessage.success('文章删除成功 (Mock)！');
+      await apiClient.deletePost(postId);
+      ElMessage.success('文章删除成功！');
       // 如果当前页被删空且不是第一页，则自动翻回上一页
       if (paginatedPosts.value.length === 0 && currentPage.value > 1 && totalPosts.value > 0) {
         currentPage.value--;
@@ -689,13 +650,11 @@ const handleDeletePost = (postId: string) => {
 const handlePageSizeChange = (val: number) => {
   pageSize.value = val;
   currentPage.value = 1;
-  fetchPosts();
 };
 
 // 当前页变化
 const handleCurrentPageChange = (val: number) => {
   currentPage.value = val;
-  fetchPosts();
 };
 
 </script>
@@ -797,6 +756,7 @@ const handleCurrentPageChange = (val: number) => {
       background-color: var(--el-fill-color-lighter);
       border-radius: 4px;
     }
+
     .post-meta {
       margin-bottom: 10px; // Reduced margin for post meta
       font-size: 0.9em;

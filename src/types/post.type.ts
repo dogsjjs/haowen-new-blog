@@ -42,6 +42,26 @@ export interface CreatePostDTO {
 
 }
 
+export interface UpdatePostDTO {
+  title?: string;
+
+  description?: string;
+
+  slug?: string;
+
+  coverImage?: string;
+
+  categoryId?: string;
+
+  tagIds?: string[];
+
+  content?: string;
+
+  isRecommended?: boolean;
+
+  isPublic?: boolean;
+}
+
 
 /**
  * 查询标签列表时，API 可能返回的结构
